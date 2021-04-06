@@ -1,22 +1,18 @@
 from fastapi import Depends, FastAPI
+from starlette.responses import RedirectResponse
 
-from .internal import admin
-from .routers.apis import fullname, search, pageid
+from .routers.apis import lxd
+
 
 app = FastAPI()
 
+app.include_router(lxd.router)
 
 
-app.include_router(fullname.router)
-app.include_router(pageid.router)
-app.include_router(search.router)
-app.include_router(
-    admin.router,
-    prefix="",
-    tags=["admin"],
-    responses={418: {"description": "I'm a teapot"}},
-)
+
 
 @app.get("/")
-async def root():
-    return {"message": "Hello Bigger Applications!"}
+async def redirect():
+    #url = app.url_path_for("docs")
+    response = RedirectResponse(url="/docs")
+    return response
