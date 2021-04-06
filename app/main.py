@@ -3,6 +3,9 @@ from starlette.responses import RedirectResponse
 
 from .routers.apis import lxd
 
+import logging
+from fastapi.logger import logger as fastapi_logger
+
 
 app = FastAPI()
 

@@ -4,7 +4,7 @@ from typing import List
 
 
 from ...internal.lxd_machine import launch_machine
-from ...internal.lxd_network import create_network
+from ...internal.lxd_network import create_network, get_ip
 from ...internal.lxd_client import client
 
 
@@ -13,6 +13,11 @@ router = APIRouter(
     tags=["lxd"],
     responses={404: {"description": "Not found"}},
 )
+
+
+@router.get("/ip")
+async def get_cluster():
+    return get_ip()
 
 
 @router.get("/image")
@@ -31,10 +36,39 @@ async def get_cluster():
 
 @router.get("/container")
 async def get_container():
+    names = list()
     for i in client.containers.all():
-        print(i.name)
-        print(i.devices)
-    return
+        names.append(i.name)
+    return names
+
+
+@router.get("/container/{prefix}")
+async def get_container_prefix(prefix: str):
+    names = list()
+    for i in client.containers.all():
+        if str(i.name).startswith(prefix):
+            names.append(i.name)
+    return names
+
+
+@router.get("/container/delete/{name}")
+async def get_container_prefix(name: str):
+    if client.containers.exists(name):
+        client.containers.get(name).stop(wait=True)
+        client.containers.get(name).delete(wait=True)
+        return True
+    return False
+
+
+@router.get("/container/delete/prefix/{prefix}")
+async def get_container_prefix(prefix: str):
+    containers = list()
+    for i in client.containers.all():
+        if str(i.name).startswith(prefix):
+            containers.append(i)
+    for container in containers:
+        container.stop(wait=True)
+        container.delete(wait=True)
 
 
 @router.get("/network")
@@ -67,7 +101,7 @@ async def get_container_url(ealps_cid: str, ealps_sid: str):
     if result["status"]:
         ipaddr = "192.168.1.80"
         port = result["assign_port"]
-        print(f"http://{ipaddr}:{port}")
+        # print(f"http://{ipaddr}:{port}")
         response = RedirectResponse(url=f"http://{ipaddr}:{port}")
         return response
     else:

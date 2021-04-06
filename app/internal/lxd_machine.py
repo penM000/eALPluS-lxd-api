@@ -4,8 +4,9 @@ import time
 import aiohttp
 from functools import wraps, partial
 import shlex
-
+import time
 import pylxd
+
 
 from .lxd_client import client
 from .lxd_network import scan_available_port, check_port_available, create_network
@@ -96,46 +97,54 @@ async def launch_machine(
 
     # ネットワーク作成
     await create_network(network)
-    # マシンが無ければ新規作成
+
     machine = get_machine(hostname)
     assign_port = None
+    # マシンが無ければ新規作成
     if None is machine:
-        # コンテナであれば
         if machinetype == "container":
+            print(f"create new container:{hostname}")
             assign_port = scan_available_port(int(startportassign))
-            print("なし")
             await launch_container_machine(
                 hostname=hostname,
-                srcport=srcport,
-                dstport=assign_port,
                 cpu=cpu,
                 memory=memory,
                 fingerprint=imagefinger,
                 aliases=imagealias,
                 network=network
             )
-
-            # print(get_ip())
             pass
         # それ以外は仮想マシン
         else:
             pass
-    # マシンが存在場合
+    # 停止スケジュールを中止
+    from .lxd_schedule import remove_stop_machine_schedule
+    remove_stop_machine_schedule(hostname)
+
+    # 割当portの取得
+    if len(get_machine_used_port(hostname)) != 0:
+        assign_port = get_machine_used_port(hostname)[0]
     else:
-        from .lxd_schedule import remove_stop_machine_schedule
-        remove_stop_machine_schedule(hostname)
-        if len(get_machine_used_port(hostname)) != 0:
-            assign_port = get_machine_used_port(hostname)[0]
+        # portの動的割当
+        machine = get_machine(hostname)
+        assign_port = scan_available_port(int(startportassign))
+        add_portforwarding_device_to_container(machine=machine,
+                                               srcport=srcport,
+                                               dstport=assign_port,
+                                               device_name="vscode-port")
 
-        if machine.status == "Running":
-
-            if await wait_get_html(make_url(https, assign_port), httpstatus, 5):
-                pass
-
-            else:
-                machine.restart()
-        else:
-            machine.start()
+    # マシン状態確認
+    machine = get_machine(hostname)
+    if machine.status == "Running":
+        pass
+    else:
+        # portの動的割当
+        assign_port = scan_available_port(int(startportassign))
+        add_portforwarding_device_to_container(machine=machine,
+                                               srcport=srcport,
+                                               dstport=assign_port,
+                                               device_name="vscode-port")
+        machine.start()
 
     # 起動確認
     if 1 == startcheck:
@@ -208,10 +217,22 @@ def get_all_machine_name():
     return A
 
 
+def add_portforwarding_device_to_container(
+        machine: pylxd.models.Container,
+        srcport: int,
+        dstport: int,
+        device_name: str):
+
+    machine.devices[device_name] = {
+        'bind': 'host',
+        'connect': f'tcp:127.0.0.1:{srcport}',
+        'listen': f'tcp:0.0.0.0:{dstport}',
+        'type': 'proxy'}
+    machine.save(wait=True)
+
+
 async def launch_container_machine(
         hostname="",
-        srcport="",
-        dstport="",
         cpu="2",
         memory="4GB",
         fingerprint="",
@@ -225,14 +246,12 @@ async def launch_container_machine(
     config = {
         "name": str(hostname),
         "source": image,
-        "config": {"limits.cpu": str(cpu), "limits.memory": str(memory)},
+        "config": {
+            "limits.cpu": str(cpu),
+            "limits.memory": str(memory),
+            "security.nesting": "1"
+        },
         "devices": {
-            "vscode-port": {
-                "bind": "host",
-                "connect": "tcp:127.0.0.1:" + str(srcport),
-                "listen": "tcp:0.0.0.0:" + str(dstport),
-                "type": "proxy"
-            },
             'eth0': {
                 'name': 'eth0',
                 'network': str(network),
@@ -240,12 +259,10 @@ async def launch_container_machine(
             }
         }
     }
-    # container = client.containers.create(config, wait=True)
-    # container.start()
-    # print(config)
     async_execute = async_wrap(client.containers.create)
     container = await async_execute(config, wait=True)
-    container.start()
+    async_execute = async_wrap(container.start)
+    await async_execute(wait=True)
 
 
 def launch_virtual_machine():
