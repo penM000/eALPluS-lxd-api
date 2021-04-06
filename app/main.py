@@ -9,8 +9,6 @@ app = FastAPI()
 app.include_router(lxd.router)
 
 
-
-
 @app.get("/")
 async def redirect():
     #url = app.url_path_for("docs")
