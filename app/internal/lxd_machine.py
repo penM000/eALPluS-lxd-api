@@ -76,18 +76,23 @@ async def get_port(hostname: str,
             assign_port = used_port[device_name]["dst_port"]
         else:
             # portの動的割当
+
             assign_port = scan_available_port(int(startportassign))
+
             machine.devices[device_name] = {
                 'bind': 'host',
                 'connect': f'tcp:127.0.0.1:{srcport}',
                 'listen': f'tcp:0.0.0.0:{assign_port}',
                 'type': 'proxy'}
-            print("new", get_machine_used_port(machine))
-            machine.save(wait=True)
-            #async_execute = async_wrap(machine.save)
-            #await async_execute(wait=True)
+
+            async_execute = async_wrap(machine.save)
+            try:
+                # machine.save(wait=True)
+                await async_execute(wait=True)
+            except BaseException:
+                print("ぶち当たり")
+                return await get_port(hostname, device_name, srcport)
             machine = get_machine(hostname)
-            print("now", get_machine_used_port(machine))
 
     else:
         # portの動的割当
@@ -116,7 +121,7 @@ async def launch_machine(
     startcheck=1,
     https=0,
     httpstatus=200,
-    starttimeout=60,
+    starttimeout=20,
     startportassign=49152,
 
 ):
@@ -243,20 +248,6 @@ def get_all_machine_name():
     A.extend(B)
     A.extend(C)
     return A
-
-
-def add_portforwarding_device_to_container(
-        machine: pylxd.models.Container,
-        srcport: int,
-        dstport: int,
-        device_name: str) -> None:
-
-    machine.devices[device_name] = {
-        'bind': 'host',
-        'connect': f'tcp:127.0.0.1:{srcport}',
-        'listen': f'tcp:0.0.0.0:{dstport}',
-        'type': 'proxy'}
-    machine.save(wait=True)
 
 
 async def launch_container_machine(
