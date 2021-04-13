@@ -1,10 +1,11 @@
+import time
 from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.responses import RedirectResponse
 from typing import List
 
 
 from ...internal.lxd_machine import launch_machine, get_port
-from ...internal.lxd_network import create_network, get_ip
+from ...internal.lxd_network import create_network, scan_available_port
 from ...internal.lxd_client import client
 
 
@@ -89,6 +90,20 @@ async def get_network(name: str):
     return client.networks.get(name)
 
 
+@router.get("/container/device/{name}")
+async def get_network(name: str):
+    used_ports = {}
+    machine = client.containers.get(name)
+    for key in machine.devices:
+        if "type" in machine.devices[key]:
+            if machine.devices[key]["type"] == "proxy":
+                dst_port = int(machine.devices[key]["listen"].split(":")[-1])
+                src_port = int(machine.devices[key]["connect"].split(":")[-1])
+                used_ports[key] = {"src_port": src_port, "dst_port": dst_port}
+    print("hoge", used_ports)
+    return
+
+
 @router.get("/container/url/{course_id}/{student_id}")
 async def get_container_url(course_id: str,
                             student_id: str,
@@ -98,17 +113,19 @@ async def get_container_url(course_id: str,
     course_id = 授業コード(イメージ名)\n
     student_id = 学籍番号(授業コード内で一意に定まるもの)
     """
+    now = time.time()
     result = await launch_machine(hostname=f"{course_id}-{student_id}",
                                   imagealias=course_id,
                                   network=course_id,
                                   src_port=src_port,
                                   port_name=port_name)
+    print(time.time() - now)
     if result["status"]:
         ipaddr = "192.168.1.80"
         port = result["assign_port"]
         print(f"http://{ipaddr}:{port}")
         response = RedirectResponse(url=f"http://{ipaddr}:{port}")
 
-        return  # response
+        return f"http://{ipaddr}:{port}"
     else:
         return result
