@@ -3,6 +3,7 @@ import psutil
 import os
 import socket
 import netifaces as ni
+import random
 from functools import wraps, partial
 
 from .lxd_client import client
@@ -66,16 +67,17 @@ def check_port_available(port):
 
 
 def scan_available_port(start_port):
-    port_offset = 0
     used_ports = get_used_port()
+    available_port_count = (65535 - start_port) - len(
+        [1 for x in used_ports if x >= start_port])
+    if available_port_count < 10:
+        raise Exception("利用可能なport上限を超えました")
     while True:
-        port_candidate = start_port + port_offset
+        port_candidate = random.randint(start_port, 65535)
         if port_candidate in used_ports:
-            port_offset += 1
+            continue
         else:
             return port_candidate
-        if port_candidate > 65535:
-            raise Exception("利用可能なport上限を超えました")
 
 
 def get_ip() -> list:
