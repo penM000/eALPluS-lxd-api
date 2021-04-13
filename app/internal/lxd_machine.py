@@ -65,10 +65,10 @@ async def send_file_to_machine(hostname, filename, filedata):
         return make_response_dict(False, "file put error")
 
 
-def get_port(hostname: str,
-             device_name: str,
-             srcport: int,
-             startportassign=49152):
+async def get_port(hostname: str,
+                   device_name: str,
+                   srcport: int,
+                   startportassign=49152):
     machine = get_machine(hostname)
     used_port = get_machine_used_port(machine)
     if device_name in used_port:
@@ -77,18 +77,27 @@ def get_port(hostname: str,
         else:
             # portの動的割当
             assign_port = scan_available_port(int(startportassign))
-            add_portforwarding_device_to_container(machine=machine,
-                                                   srcport=srcport,
-                                                   dstport=assign_port,
-                                                   device_name=device_name)
+            machine.devices[device_name] = {
+                'bind': 'host',
+                'connect': f'tcp:127.0.0.1:{srcport}',
+                'listen': f'tcp:0.0.0.0:{assign_port}',
+                'type': 'proxy'}
+            print("new", get_machine_used_port(machine))
+            machine.save(wait=True)
+            #async_execute = async_wrap(machine.save)
+            #await async_execute(wait=True)
+            machine = get_machine(hostname)
+            print("now", get_machine_used_port(machine))
 
     else:
         # portの動的割当
         assign_port = scan_available_port(int(startportassign))
-        add_portforwarding_device_to_container(machine=machine,
-                                               srcport=srcport,
-                                               dstport=assign_port,
-                                               device_name=device_name)
+        machine.devices[device_name] = {
+            'bind': 'host',
+            'connect': f'tcp:127.0.0.1:{srcport}',
+            'listen': f'tcp:0.0.0.0:{assign_port}',
+            'type': 'proxy'}
+        machine.save(wait=True)
 
     return assign_port
 
@@ -155,14 +164,14 @@ async def launch_machine(
     from .lxd_schedule import remove_stop_machine_schedule
     remove_stop_machine_schedule(hostname)
 
-    assign_port = get_port(hostname, port_name, src_port)
+    assign_port = await get_port(hostname, port_name, src_port)
     # マシン状態確認
     machine = get_machine(hostname)
     if machine.status == "Running":
         pass
     else:
         # portの動的割当
-        assign_port = get_port(hostname, port_name, src_port)
+        assign_port = await get_port(hostname, port_name, src_port)
         machine.start()
 
     # 起動確認
