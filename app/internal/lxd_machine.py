@@ -4,12 +4,13 @@ import time
 import aiohttp
 from functools import wraps, partial
 import shlex
-import time
 import pylxd
 
 
 from .lxd_client import client
-from .lxd_network import scan_available_port, check_port_available, create_network
+from .lxd_network import scan_available_port, \
+    check_port_available, \
+    create_network
 
 
 # 同期関数を非同期関数にする
@@ -64,8 +65,37 @@ async def send_file_to_machine(hostname, filename, filedata):
         return make_response_dict(False, "file put error")
 
 
+def get_port(hostname: str,
+             device_name: str,
+             srcport: int,
+             startportassign=49152):
+    machine = get_machine(hostname)
+    used_port = get_machine_used_port(machine)
+    if device_name in used_port:
+        if used_port[device_name]["src_port"] == srcport:
+            assign_port = used_port[device_name]["dst_port"]
+        else:
+            # portの動的割当
+            assign_port = scan_available_port(int(startportassign))
+            add_portforwarding_device_to_container(machine=machine,
+                                                   srcport=srcport,
+                                                   dstport=assign_port,
+                                                   device_name=device_name)
+
+    else:
+        # portの動的割当
+        assign_port = scan_available_port(int(startportassign))
+        add_portforwarding_device_to_container(machine=machine,
+                                               srcport=srcport,
+                                               dstport=assign_port,
+                                               device_name=device_name)
+
+    return assign_port
+
+
 async def launch_machine(
     hostname: str,
+    port_name: str,
     imagealias="",
     imagefinger="",
     machinetype="container",
@@ -73,12 +103,13 @@ async def launch_machine(
     memory="3GB",
     storage="32GB",
     network="lxdbr0",
-    srcport=8080,
+    src_port=8080,
     startcheck=1,
     https=0,
     httpstatus=200,
     starttimeout=60,
-    startportassign=10000
+    startportassign=49152,
+
 ):
 
     # ローカルイメージ検索
@@ -87,10 +118,13 @@ async def launch_machine(
         # raise Exception("イメージが指定されていません")
         return make_response_dict(False, "image_error", "イメージが指定されていません")
 
-    elif imagealias != "" and len([s for s in aliases if imagealias == s]) == 0:
+    elif imagealias != "" and \
+            len([s for s in aliases if imagealias == s]) == 0:
         # raise Exception("イメージ名が異なっています")
         return make_response_dict(False, "image_error", "イメージエイリアスが異なっています")
-    elif imagefinger != "" and len([s for s in fingerprint if s.startswith(imagefinger)]) == 0:
+
+    elif imagefinger != "" and \
+            len([s for s in fingerprint if s.startswith(imagefinger)]) == 0:
         # raise Exception("イメージ名が異なっています")
         return make_response_dict(
             False, "image_error", "イメージフィンガープリントが異なっています")
@@ -121,29 +155,14 @@ async def launch_machine(
     from .lxd_schedule import remove_stop_machine_schedule
     remove_stop_machine_schedule(hostname)
 
-    # 割当portの取得
-    if len(get_machine_used_port(hostname)) != 0:
-        assign_port = get_machine_used_port(hostname)[0]
-    else:
-        # portの動的割当
-        machine = get_machine(hostname)
-        assign_port = scan_available_port(int(startportassign))
-        add_portforwarding_device_to_container(machine=machine,
-                                               srcport=srcport,
-                                               dstport=assign_port,
-                                               device_name="vscode-port")
-
+    assign_port = get_port(hostname, port_name, src_port)
     # マシン状態確認
     machine = get_machine(hostname)
     if machine.status == "Running":
         pass
     else:
         # portの動的割当
-        assign_port = scan_available_port(int(startportassign))
-        add_portforwarding_device_to_container(machine=machine,
-                                               srcport=srcport,
-                                               dstport=assign_port,
-                                               device_name="vscode-port")
+        assign_port = get_port(hostname, port_name, src_port)
         machine.start()
 
     # 起動確認
@@ -221,7 +240,7 @@ def add_portforwarding_device_to_container(
         machine: pylxd.models.Container,
         srcport: int,
         dstport: int,
-        device_name: str):
+        device_name: str) -> None:
 
     machine.devices[device_name] = {
         'bind': 'host',
@@ -322,17 +341,14 @@ def delete_machine(name):
     print(get_machine(name))
 
 
-def get_machine_used_port(machine_name):
-    machine = get_machine(machine_name)
-    if machine is None:
-        return []
-    used_ports = []
-
+def get_machine_used_port(machine: pylxd.models.Container) -> dict:
+    used_ports = {}
     for key in machine.devices:
         if "type" in machine.devices[key]:
             if machine.devices[key]["type"] == "proxy":
-                used_ports.append(
-                    int(machine.devices[key]["listen"].split(":")[-1]))
+                dst_port = int(machine.devices[key]["listen"].split(":")[-1])
+                src_port = int(machine.devices[key]["connect"].split(":")[-1])
+                used_ports[key] = {"src_port": src_port, "dst_port": dst_port}
     return used_ports
 
 

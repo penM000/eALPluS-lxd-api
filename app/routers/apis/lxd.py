@@ -3,7 +3,7 @@ from starlette.responses import RedirectResponse
 from typing import List
 
 
-from ...internal.lxd_machine import launch_machine
+from ...internal.lxd_machine import launch_machine, get_port
 from ...internal.lxd_network import create_network, get_ip
 from ...internal.lxd_client import client
 
@@ -89,20 +89,26 @@ async def get_network(name: str):
     return client.networks.get(name)
 
 
-@router.get("/container/url/{ealps_cid}/{ealps_sid}")
-async def get_container_url(ealps_cid: str, ealps_sid: str):
+@router.get("/container/url/{course_id}/{student_id}")
+async def get_container_url(course_id: str,
+                            student_id: str,
+                            src_port: int = 8080,
+                            port_name: str = "vscode-port"):
     """
-    ealps_cid = 授業コード(イメージ名)\n
-    ealps_sid = 学籍番号(授業コード内で一意に定まるもの)
+    course_id = 授業コード(イメージ名)\n
+    student_id = 学籍番号(授業コード内で一意に定まるもの)
     """
-    result = await launch_machine(hostname=f"{ealps_cid}-{ealps_sid}",
-                                  imagealias=ealps_cid,
-                                  network=ealps_cid)
+    result = await launch_machine(hostname=f"{course_id}-{student_id}",
+                                  imagealias=course_id,
+                                  network=course_id,
+                                  src_port=src_port,
+                                  port_name=port_name)
     if result["status"]:
         ipaddr = "192.168.1.80"
         port = result["assign_port"]
-        # print(f"http://{ipaddr}:{port}")
+        print(f"http://{ipaddr}:{port}")
         response = RedirectResponse(url=f"http://{ipaddr}:{port}")
-        return response
+
+        return  # response
     else:
         return result
