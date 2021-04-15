@@ -1,29 +1,13 @@
 #!/usr/bin/python3
-import asyncio
-import time
-import aiohttp
-from functools import wraps, partial
 import shlex
 import pylxd
 
 
 from .lxd_client import client
-from .lxd_network import scan_available_port, \
-    check_port_available, \
-    create_network
-
-
-# 同期関数を非同期関数にする
-
-
-def async_wrap(func):
-    @wraps(func)
-    async def run(*args, loop=None, executor=None, **kwargs):
-        if loop is None:
-            loop = asyncio.get_event_loop()
-        pfunc = partial(func, *args, **kwargs)
-        return await loop.run_in_executor(executor, pfunc)
-    return run
+from .lxd_network import (scan_available_port,
+                          create_network,)
+from .general.async_wrap import async_wrap
+from .general.get_html import check_http_response
 
 
 def make_response_dict(
@@ -68,41 +52,33 @@ async def send_file_to_machine(hostname, filename, filedata):
 async def get_port(hostname: str,
                    device_name: str,
                    srcport: int,
-                   startportassign=49152):
+                   startportassign: int = 49152) -> int:
+
     machine = get_machine(hostname)
-    used_port = get_machine_used_port(machine)
-    if device_name in used_port:
-        if used_port[device_name]["src_port"] == srcport:
-            assign_port = used_port[device_name]["dst_port"]
-        else:
-            # portの動的割当
+    used_ports = get_machine_used_port(machine)
 
-            assign_port = scan_available_port(int(startportassign))
-
-            machine.devices[device_name] = {
-                'bind': 'host',
-                'connect': f'tcp:127.0.0.1:{srcport}',
-                'listen': f'tcp:0.0.0.0:{assign_port}',
-                'type': 'proxy'}
-
-            async_execute = async_wrap(machine.save)
-            try:
-                # machine.save(wait=True)
-                await async_execute(wait=True)
-            except BaseException:
-                print("ぶち当たり")
-                return await get_port(hostname, device_name, srcport)
-            machine = get_machine(hostname)
-
+    if device_name in used_ports:
+        used_port = used_ports[device_name]["src_port"]
     else:
-        # portの動的割当
+        used_port = None
+
+    if used_port == srcport:
+        assign_port = used_ports[device_name]["dst_port"]
+    else:
+        # srcポートが異なる・srcポートが割当られていない場合ポートを追加
         assign_port = scan_available_port(int(startportassign))
         machine.devices[device_name] = {
             'bind': 'host',
             'connect': f'tcp:127.0.0.1:{srcport}',
             'listen': f'tcp:0.0.0.0:{assign_port}',
             'type': 'proxy'}
-        machine.save(wait=True)
+        async_execute = async_wrap(machine.save)
+        try:
+            await async_execute(wait=True)
+        except BaseException:
+            print("INFO:conflict port!! retry")
+            return await get_port(hostname, device_name, srcport)
+        machine = get_machine(hostname)
 
     return assign_port
 
@@ -181,8 +157,9 @@ async def launch_machine(
 
     # 起動確認
     if 1 == startcheck:
-        result = await wait_get_html(
-            make_url(https, assign_port),
+        result = await check_http_response(
+            https,
+            assign_port,
             httpstatus,
             starttimeout
         )
@@ -192,41 +169,6 @@ async def launch_machine(
             return make_response_dict(False, "timeout_error")
     else:
         return make_response_dict(assign_port=assign_port)
-
-
-def make_url(https, assign_port):
-    # URL生成
-    try_url = ""
-    if https == 0:
-        try_url += "http://"
-    else:
-        try_url += "https://"
-    try_url += "127.0.0.1"
-    try_url += ":" + str(assign_port)
-    return try_url
-
-
-async def wait_get_html(url, status, time_out):
-    start_time = time.time()
-    while time.time() - start_time < time_out:
-        result = await get_html(url)
-        if str(result) == str(status):
-            return True
-        await asyncio.sleep(1)
-    return False
-
-
-async def get_html(url):
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url, verify_ssl=False) as resp:
-                return int(resp.status)
-        except aiohttp.client_exceptions.ClientConnectorError:
-            return 0
-        except aiohttp.client_exceptions.ServerDisconnectedError:
-            return 0
-        except BaseException:
-            return 0
 
 
 def get_all_image():
@@ -244,7 +186,8 @@ def get_all_image():
 def get_all_machine_name():
     A = []
     B = [container.name for container in client.containers.all()]
-    C = [virtual_machine.name for virtual_machine in client.virtual_machines.all()]
+    C = [virtual_machine.name for virtual_machine
+         in client.virtual_machines.all()]
     A.extend(B)
     A.extend(C)
     return A
@@ -352,107 +295,8 @@ def get_machine_used_port(machine: pylxd.models.Container) -> dict:
     return used_ports
 
 
-def read_file(file_path):
-    with open(file_path) as f:
-        l_strip = [s.strip() for s in f.readlines()]
-        return l_strip
-
-
-def make_csv(
-        in_file_path,
-        out_file_path,
-        start_port=0,
-        prefix="",
-        suffix="",
-        image_aliases="",
-        image_fingerprint="",
-        class_code="",
-        ip_address=""):
-    members = read_file(in_file_path)
-    port_offset = 0
-    file_meta = ["class_code,name,ip,port,image_aliases,image_fingerprint"]
-    for i in range(len(members)):
-        while True:
-            port_candidate = start_port + i + port_offset
-            if check_port_available(port_candidate):
-                file_meta.append(
-                    class_code + "," +
-                    members[i] + "," +
-                    ip_address + "," +
-                    str(port_candidate) + "," +
-                    image_aliases + "," +
-                    image_fingerprint
-                )
-                break
-            else:
-                port_offset += 1
-    with open(out_file_path, mode='w') as f:
-        f.write('\n'.join(file_meta))
-
-
-def make_csv_from_str(
-        in_file_str="",
-        start_port=0,
-        prefix="",
-        suffix="",
-        image_aliases="",
-        image_fingerprint="",
-        class_code="",
-        ip_address=""):
-    members = in_file_str.splitlines()
-    port_offset = 0
-    file_meta = ["class_code,name,ip,port,image_aliases,image_fingerprint"]
-    for i in range(len(members)):
-        while True:
-            port_candidate = start_port + i + port_offset
-            if check_port_available(port_candidate):
-                file_meta.append(
-                    class_code + "," +
-                    members[i] + "," +
-                    ip_address + "," +
-                    str(port_candidate) + "," +
-                    image_aliases + "," +
-                    image_fingerprint
-                )
-                break
-            else:
-                port_offset += 1
-    return '\n'.join(file_meta)
-
-
 def get_machine_file(machine_name, file_path, local_path):
     machine = get_machine(machine_name)
     file_meta = machine.files.recursive_get(file_path, local_path)
 
     return file_meta
-
-
-async def test():
-    hoge = await wait_get_html("https://yukkuriikouze.com", 200, 5)
-    print(hoge)
-
-
-async def test():
-    await asyncio.gather(exec_command_to_machine("funo", "sleep 10"), exec_command_to_machine("funo", "sleep 10"), exec_command_to_machine("funo", "sleep 10"))
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(test())
-
-
-"""
-make_csv(
-        'member.txt',
-        'member.csv',
-        start_port=10000,
-        ip_address="160.252.131.148",
-        class_code="PIT0014",
-        image_aliases="PIT0014-v1")
-    for line in read_file('member.csv')[1:]:
-        class_code, name, ip, port, aliases, fingerprint = line.split(",")
-        #print(class_code+"-"+name, port, aliases, fingerprint)
-        print("launch"+class_code+"-"+name)
-        #launch_container_machine(class_code+"-"+name, port)
-    # launch_container_machine("my-test2","5659")
-    # delete_machine("my-vmapitest")
-"""

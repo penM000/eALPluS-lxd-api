@@ -1,24 +1,28 @@
 import time
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from starlette.responses import RedirectResponse
 from typing import List
 
 
 from ...internal.lxd_machine import launch_machine, get_port
-from ...internal.lxd_network import create_network, scan_available_port
+from ...internal.lxd_network import create_network, \
+    scan_available_port, \
+    get_ip_address
 from ...internal.lxd_client import client
 
 
 router = APIRouter(
     prefix="/lxd",
-    tags=["lxd"],
     responses={404: {"description": "Not found"}},
 )
 
 
 @router.get("/ip")
-async def get_cluster():
-    return get_ip()
+async def get_ip(request: Request):
+    """
+    ipアドレスの値を取得
+    """
+    return get_ip_address(request.client.host)[0]
 
 
 @router.get("/image")
@@ -107,8 +111,10 @@ async def get_network(name: str):
 @router.get("/container/url/{course_id}/{student_id}")
 async def get_container_url(course_id: str,
                             student_id: str,
+                            request: Request,
                             src_port: int = 8080,
-                            port_name: str = "vscode-port"):
+                            port_name: str = "vscode-port",
+                            ):
     """
     course_id = 授業コード(イメージ名)\n
     student_id = 学籍番号(授業コード内で一意に定まるもの)
@@ -121,11 +127,12 @@ async def get_container_url(course_id: str,
                                   port_name=port_name)
     print(time.time() - now)
     if result["status"]:
-        ipaddr = "192.168.1.80"
+        #ipaddr = "192.168.1.80"
+        ipaddr = get_ip_address(request.client.host)[0]
         port = result["assign_port"]
-        print(f"http://{ipaddr}:{port}")
+        # print(f"http://{ipaddr}:{port}")
         response = RedirectResponse(url=f"http://{ipaddr}:{port}")
 
-        return f"http://{ipaddr}:{port}"
+        return response
     else:
         return result
