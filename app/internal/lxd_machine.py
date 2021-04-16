@@ -2,6 +2,7 @@
 import shlex
 import pylxd
 
+from typing import Dict
 
 from .lxd_client import client
 from .lxd_network import (scan_available_port,
@@ -128,7 +129,6 @@ async def launch_machine(
     if None is machine:
         if machinetype == "container":
             print(f"create new container:{hostname}")
-            assign_port = scan_available_port(int(startportassign))
             await launch_container_machine(
                 hostname=hostname,
                 cpu=cpu,
@@ -284,7 +284,12 @@ def delete_machine(name):
     print(get_machine(name))
 
 
-def get_machine_used_port(machine: pylxd.models.Container) -> dict:
+def get_machine_used_port(
+        machine: pylxd.models.Container) -> Dict[str, Dict[str, int]]:
+    """
+    返り値:
+        {device_name:{src_port:int,dst_port:int}}
+    """
     used_ports = {}
     for key in machine.devices:
         if "type" in machine.devices[key]:

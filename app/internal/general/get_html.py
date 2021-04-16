@@ -3,7 +3,7 @@ import aiohttp
 import time
 
 
-async def check_http_response(https, assign_port, status, time_out):
+async def check_http_response(https, assign_port, status, time_out) -> bool:
     return await wait_get_html(
         make_url(https, assign_port),
         status,
@@ -11,7 +11,7 @@ async def check_http_response(https, assign_port, status, time_out):
     )
 
 
-def make_url(https, assign_port):
+def make_url(https, assign_port) -> str:
     # URL生成
     try_url = ""
     if https == 0:
@@ -33,7 +33,7 @@ async def wait_get_html(url, status, time_out) -> bool:
     return False
 
 
-async def get_html(url):
+async def get_html(url) -> int:
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(url, verify_ssl=False) as resp:
