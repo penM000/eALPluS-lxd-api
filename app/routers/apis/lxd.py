@@ -114,7 +114,8 @@ async def get_container_url(course_id: str,
                             request: Request,
                             src_port: int = 8080,
                             port_name: str = "vscode-port",
-                            image: str = ""
+                            image: str = "",
+                            ealps_role: str = ""
                             ):
     """
     course_id = 授業コード(イメージ名)\n
@@ -129,7 +130,9 @@ async def get_container_url(course_id: str,
                                   imagealias=imagealias,
                                   network=course_id,
                                   src_port=src_port,
-                                  port_name=port_name)
+                                  port_name=port_name,
+                                  class_id=course_id,
+                                  role_id=ealps_role)
     print(time.time() - now)
     if result["status"]:
         #ipaddr = "192.168.1.80"

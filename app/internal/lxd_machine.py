@@ -54,6 +54,8 @@ async def launch_machine(
     httpstatus=200,
     starttimeout=20,
     startportassign=49152,
+    role_id="",
+    class_id=""
 
 ):
 
@@ -76,7 +78,9 @@ async def launch_machine(
                 memory=memory,
                 fingerprint=imagefinger,
                 aliases=imagealias,
-                network=network
+                network=network,
+                role_id=role_id,
+                class_id=class_id
             )
             pass
         # それ以外は仮想マシン

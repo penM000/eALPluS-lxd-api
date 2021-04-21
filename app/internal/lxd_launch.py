@@ -9,7 +9,9 @@ async def launch_container_machine(
         disk_size: str = "32GB",
         fingerprint: str = "",
         aliases: str = "",
-        network: str = "lxdbr0"):
+        network: str = "lxdbr0",
+        role_id: str = "",
+        class_id: str = ""):
     image = {}
     if fingerprint != "":
         image = {"type": "image", "fingerprint": str(fingerprint)}
@@ -21,8 +23,9 @@ async def launch_container_machine(
         "config": {
             "limits.cpu": str(cpu),
             "limits.memory": str(memory),
-            "security.nesting": "1"
-        },
+            "security.nesting": "1",
+            "user.role": str(role_id),
+            "user.class": str(class_id)},
         "devices": {
             "eth0": {
                 "name": "eth0",
