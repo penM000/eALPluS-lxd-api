@@ -22,9 +22,9 @@ def check_existence_of_image(
 
     elif alias != "" and \
             len([s for s in aliases if alias == s]) == 0:
-        return [False, "イメージエイリアスが異なっています"]
+        return [False, f"指定された「{alias}」イメージエイリアスが見つかりません"]
 
     elif finger != "" and \
             len([s for s in fingerprint if s.startswith(finger)]) == 0:
-        return [False, "イメージフィンガープリントが異なっています"]
+        return [False, f"指定された「{finger}」イメージフィンガープリントが見つかりません"]
     return [True, None]
