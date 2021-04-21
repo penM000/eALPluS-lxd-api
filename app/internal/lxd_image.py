@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from .lxd_client import client
 
 
@@ -15,7 +15,7 @@ def get_all_image():
 
 
 def check_existence_of_image(
-        alias: str = "", finger: str = "") -> List[bool, str]:
+        alias: str = "", finger: str = "") -> List[Union[bool, str]]:
     aliases, fingerprint = get_all_image()
     if (alias == "") and (finger == ""):
         return [False, "イメージが指定されていません"]
