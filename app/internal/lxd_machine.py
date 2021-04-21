@@ -2,12 +2,11 @@
 import shlex
 import pylxd
 
-from typing import Dict
-
 from .lxd_client import client
-from .lxd_network import (scan_available_port,
-                          create_network,)
+from .lxd_network import create_network
+from .lxd_port import get_port
 from .lxd_image import check_existence_of_image
+from .lxd_launch import launch_container_machine
 
 from .general.async_wrap import async_wrap
 from .general.get_html import check_http_response
@@ -37,40 +36,6 @@ async def send_file_to_machine(hostname, filename, filedata):
         return make_response_dict()
     except BaseException:
         return make_response_dict(False, "file put error")
-
-
-async def get_port(hostname: str,
-                   device_name: str,
-                   srcport: int,
-                   startportassign: int = 49152) -> int:
-
-    machine = get_machine(hostname)
-    used_ports = get_machine_used_port(machine)
-
-    if device_name in used_ports:
-        used_port = used_ports[device_name]["src_port"]
-    else:
-        used_port = None
-
-    if used_port == srcport:
-        assign_port = used_ports[device_name]["dst_port"]
-    else:
-        # srcポートが異なる・srcポートが割当られていない場合ポートを追加
-        assign_port = scan_available_port(int(startportassign))
-        machine.devices[device_name] = {
-            'bind': 'host',
-            'connect': f'tcp:127.0.0.1:{srcport}',
-            'listen': f'tcp:0.0.0.0:{assign_port}',
-            'type': 'proxy'}
-        async_execute = async_wrap(machine.save)
-        try:
-            await async_execute(wait=True)
-        except BaseException:
-            print("INFO:conflict port!! retry")
-            return await get_port(hostname, device_name, srcport)
-        machine = get_machine(hostname)
-
-    return assign_port
 
 
 async def launch_machine(
@@ -157,66 +122,6 @@ def get_all_machine_name():
     return A
 
 
-async def launch_container_machine(
-        hostname: str = "",
-        cpu: int = 2,
-        memory: str = "4GB",
-        disk_size: str = "32GB",
-        fingerprint: str = "",
-        aliases: str = "",
-        network: str = "lxdbr0"):
-    image = {}
-    if fingerprint != "":
-        image = {"type": "image", "fingerprint": str(fingerprint)}
-    elif aliases != "":
-        image = {"type": "image", "alias": str(aliases)}
-    config = {
-        "name": str(hostname),
-        "source": image,
-        "config": {
-            "limits.cpu": str(cpu),
-            "limits.memory": str(memory),
-            "security.nesting": "1"
-        },
-        "devices": {
-            "eth0": {
-                "name": "eth0",
-                "network": str(network),
-                "type": "nic"
-            },
-            "root": {
-                "path": "/",
-                "pool": "default",
-                "size": str(disk_size),
-                "type": "disk",
-            }
-        }
-    }
-    async_execute = async_wrap(client.containers.create)
-    container = await async_execute(config, wait=True)
-    async_execute = async_wrap(container.start)
-    await async_execute(wait=True)
-
-
-def launch_virtual_machine():
-    config = {
-        "name": "my-vmapitest",
-        "source": {
-            "type": "image",
-            "fingerprint": "fbca989572df"},
-        "config": {
-            "limits.cpu": "2",
-            "limits.memory": "3GB"},
-        "devices": {
-            "root": {
-                "path": "/",
-                "pool": "default",
-                "type": "disk",
-                "size": "20GB"}}}
-    virtual_machines = client.virtual_machines.create(config, wait=True)
-    virtual_machines.start(wait=True)
-
-
 def get_machine(name):
     machine = None
     try:
@@ -253,22 +158,6 @@ def start_machine(name):
 
 def delete_machine(name):
     print(get_machine(name))
-
-
-def get_machine_used_port(
-        machine: pylxd.models.Container) -> Dict[str, Dict[str, int]]:
-    """
-    返り値:
-        {device_name:{src_port:int,dst_port:int}}
-    """
-    used_ports = {}
-    for key in machine.devices:
-        if "type" in machine.devices[key]:
-            if machine.devices[key]["type"] == "proxy":
-                dst_port = int(machine.devices[key]["listen"].split(":")[-1])
-                src_port = int(machine.devices[key]["connect"].split(":")[-1])
-                used_ports[key] = {"src_port": src_port, "dst_port": dst_port}
-    return used_ports
 
 
 def get_machine_file(machine_name, file_path, local_path):
