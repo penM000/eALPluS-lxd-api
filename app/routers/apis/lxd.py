@@ -1,12 +1,10 @@
 import time
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Request
 from starlette.responses import RedirectResponse
-from typing import List
 
 
-from ...internal.lxd_machine import launch_machine, get_port
+from ...internal.lxd_machine import launch_machine
 from ...internal.lxd_network import create_network, \
-    scan_available_port, \
     get_ip_address
 from ...internal.lxd_client import client
 
@@ -115,7 +113,10 @@ async def get_container_url(course_id: str,
                             src_port: int = 8080,
                             port_name: str = "vscode-port",
                             image: str = "",
-                            ealps_role: str = ""
+                            ealps_role: str = "",
+                            cpu: int = 2,
+                            memory: str = "2GB",
+                            storage: str = "32GB"
                             ):
     """
     course_id = 授業コード(イメージ名)\n
@@ -132,10 +133,13 @@ async def get_container_url(course_id: str,
                                   src_port=src_port,
                                   port_name=port_name,
                                   class_id=course_id,
-                                  role_id=ealps_role)
+                                  role_id=ealps_role,
+                                  cpu=cpu,
+                                  memory=memory,
+                                  storage=storage)
     print(time.time() - now)
     if result["status"]:
-        #ipaddr = "192.168.1.80"
+        # ipaddr = "192.168.1.80"
         ipaddr = get_ip_address(request.client.host)[0]
         port = result["assign_port"]
         # print(f"http://{ipaddr}:{port}")

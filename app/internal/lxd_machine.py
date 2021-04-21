@@ -45,7 +45,7 @@ async def launch_machine(
     imagefinger="",
     machinetype="container",
     cpu=2,
-    memory="3GB",
+    memory="2GB",
     storage="32GB",
     network="lxdbr0",
     src_port=8080,
