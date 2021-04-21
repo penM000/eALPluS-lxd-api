@@ -7,22 +7,11 @@ from typing import Dict
 from .lxd_client import client
 from .lxd_network import (scan_available_port,
                           create_network,)
+from .lxd_image import check_existence_of_image
+
 from .general.async_wrap import async_wrap
 from .general.get_html import check_http_response
-
-
-def make_response_dict(
-    status=True,
-    details="success",
-    assign_port="",
-    option=""
-):
-    return {
-        "status": status,
-        "details": details,
-        "assign_port": assign_port,
-        "option": option
-    }
+from .general.response import make_response_dict
 
 
 # マシンコマンド実行
@@ -104,27 +93,14 @@ async def launch_machine(
 ):
 
     # ローカルイメージ検索
-    aliases, fingerprint = get_all_image()
-    if (imagealias == "") and (imagefinger == ""):
-        # raise Exception("イメージが指定されていません")
-        return make_response_dict(False, "image_error", "イメージが指定されていません")
-
-    elif imagealias != "" and \
-            len([s for s in aliases if imagealias == s]) == 0:
-        # raise Exception("イメージ名が異なっています")
-        return make_response_dict(False, "image_error", "イメージエイリアスが異なっています")
-
-    elif imagefinger != "" and \
-            len([s for s in fingerprint if s.startswith(imagefinger)]) == 0:
-        # raise Exception("イメージ名が異なっています")
-        return make_response_dict(
-            False, "image_error", "イメージフィンガープリントが異なっています")
+    temp = check_existence_of_image(alias=imagealias, finger=imagefinger)
+    if not temp[0]:
+        return make_response_dict(False, temp[1])
 
     # ネットワーク作成
     await create_network(network)
 
     machine = get_machine(hostname)
-    assign_port = None
     # マシンが無ければ新規作成
     if None is machine:
         if machinetype == "container":
@@ -171,18 +147,6 @@ async def launch_machine(
         return make_response_dict(assign_port=assign_port)
 
 
-def get_all_image():
-    aliases = []
-    fingerprint = []
-    for image in client.images.all():
-        if len(image.aliases) != 0:
-            for i in image.aliases:
-                if "name" in i:
-                    aliases.append(i["name"])
-        fingerprint.append(image.fingerprint)
-    return aliases, fingerprint
-
-
 def get_all_machine_name():
     A = []
     B = [container.name for container in client.containers.all()]
@@ -194,12 +158,13 @@ def get_all_machine_name():
 
 
 async def launch_container_machine(
-        hostname="",
-        cpu="2",
-        memory="4GB",
-        fingerprint="",
-        aliases="",
-        network="lxdbr0"):
+        hostname: str = "",
+        cpu: int = 2,
+        memory: str = "4GB",
+        disk_size: str = "32GB",
+        fingerprint: str = "",
+        aliases: str = "",
+        network: str = "lxdbr0"):
     image = {}
     if fingerprint != "":
         image = {"type": "image", "fingerprint": str(fingerprint)}
@@ -214,10 +179,16 @@ async def launch_container_machine(
             "security.nesting": "1"
         },
         "devices": {
-            'eth0': {
-                'name': 'eth0',
-                'network': str(network),
-                'type': 'nic'
+            "eth0": {
+                "name": "eth0",
+                "network": str(network),
+                "type": "nic"
+            },
+            "root": {
+                "path": "/",
+                "pool": "default",
+                "size": str(disk_size),
+                "type": "disk",
             }
         }
     }
