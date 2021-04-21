@@ -114,14 +114,19 @@ async def get_container_url(course_id: str,
                             request: Request,
                             src_port: int = 8080,
                             port_name: str = "vscode-port",
+                            image: str = ""
                             ):
     """
     course_id = 授業コード(イメージ名)\n
     student_id = 学籍番号(授業コード内で一意に定まるもの)
     """
     now = time.time()
+    if image == "":
+        imagealias = course_id
+    else:
+        imagealias = image
     result = await launch_machine(hostname=f"{course_id}-{student_id}",
-                                  imagealias=course_id,
+                                  imagealias=imagealias,
                                   network=course_id,
                                   src_port=src_port,
                                   port_name=port_name)
