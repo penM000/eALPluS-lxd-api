@@ -189,6 +189,6 @@ async def get_container_ip_port(course_id: str,
         # print(f"http://{ipaddr}:{port}")
         response = RedirectResponse(url=f"http://{ipaddr}:{port}")
 
-        return {"ip": ipaddr, "port": port}}
+        return {"ip": ipaddr, "port": port}
     else:
         return result
