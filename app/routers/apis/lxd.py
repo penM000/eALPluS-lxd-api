@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 from starlette.responses import RedirectResponse
 
 
-from ...internal.lxd.machine import launch_machine
+from ...internal.lxd.instance import launch_instance
 from ...internal.lxd.network import create_network, \
     get_ip_address
 from ...internal.lxd.client import client
@@ -95,12 +95,12 @@ async def get_network(name: str):
 @router.get("/container/device/{name}")
 async def get_network(name: str):
     used_ports = {}
-    machine = client.containers.get(name)
-    for key in machine.devices:
-        if "type" in machine.devices[key]:
-            if machine.devices[key]["type"] == "proxy":
-                dst_port = int(machine.devices[key]["listen"].split(":")[-1])
-                src_port = int(machine.devices[key]["connect"].split(":")[-1])
+    instance = client.containers.get(name)
+    for key in instance.devices:
+        if "type" in instance.devices[key]:
+            if instance.devices[key]["type"] == "proxy":
+                dst_port = int(instance.devices[key]["listen"].split(":")[-1])
+                src_port = int(instance.devices[key]["connect"].split(":")[-1])
                 used_ports[key] = {"src_port": src_port, "dst_port": dst_port}
     print("hoge", used_ports)
     return
@@ -127,17 +127,17 @@ async def get_container_url(course_id: str,
         imagealias = course_id
     else:
         imagealias = image
-    result = await launch_machine(hostname=f"{course_id}-{student_id}",
-                                  imagealias=imagealias,
-                                  network=course_id,
-                                  src_port=src_port,
-                                  port_name=port_name,
-                                  class_id=course_id,
-                                  role_id=ealps_role,
-                                  cpu=cpu,
-                                  memory=memory,
-                                  storage=storage)
-    print(time.time() - now)
+    result = await launch_instance(hostname=f"{course_id}-{student_id}",
+                                   imagealias=imagealias,
+                                   network=course_id,
+                                   src_port=src_port,
+                                   port_name=port_name,
+                                   class_id=course_id,
+                                   role_id=ealps_role,
+                                   cpu=cpu,
+                                   memory=memory,
+                                   storage=storage)
+    #print(time.time() - now)
     if result["status"]:
         # ipaddr = "192.168.1.80"
         ipaddr = get_ip_address(request.client.host)[0]
@@ -171,24 +171,22 @@ async def get_container_ip_port(course_id: str,
         imagealias = course_id
     else:
         imagealias = image
-    result = await launch_machine(hostname=f"{course_id}-{student_id}",
-                                  imagealias=imagealias,
-                                  network=course_id,
-                                  src_port=src_port,
-                                  port_name=port_name,
-                                  class_id=course_id,
-                                  role_id=ealps_role,
-                                  cpu=cpu,
-                                  memory=memory,
-                                  storage=storage)
-    print(time.time() - now)
+    result = await launch_instance(hostname=f"{course_id}-{student_id}",
+                                   imagealias=imagealias,
+                                   network=course_id,
+                                   src_port=src_port,
+                                   port_name=port_name,
+                                   class_id=course_id,
+                                   role_id=ealps_role,
+                                   cpu=cpu,
+                                   memory=memory,
+                                   storage=storage)
+    #print(time.time() - now)
     if result["status"]:
         # ipaddr = "192.168.1.80"
-        ipaddr = get_ip_address(request.client.host)[0]
+        ipaddr = get_ip_address(request.client.host)
         port = result["assign_port"]
         # print(f"http://{ipaddr}:{port}")
-        response = RedirectResponse(url=f"http://{ipaddr}:{port}")
-
-        return {"ip": ipaddr, "port": port}
+        return {"ip": ipaddr[0], "port": port}
     else:
         return result
