@@ -1,5 +1,5 @@
 from typing import List, Union
-from .lxd_client import client
+from .client import client
 
 
 def get_all_image():

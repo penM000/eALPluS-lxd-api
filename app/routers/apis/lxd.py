@@ -3,10 +3,10 @@ from fastapi import APIRouter, Request
 from starlette.responses import RedirectResponse
 
 
-from ...internal.lxd_machine import launch_machine
-from ...internal.lxd_network import create_network, \
+from ...internal.lxd.machine import launch_machine
+from ...internal.lxd.network import create_network, \
     get_ip_address
-from ...internal.lxd_client import client
+from ...internal.lxd.client import client
 
 
 router = APIRouter(

@@ -9,8 +9,8 @@ from ipaddress import (
     ip_interface, ip_address)
 
 
-from .lxd_client import client
-from .general.async_wrap import async_wrap
+from .client import client
+from ..general.async_wrap import async_wrap
 
 
 async def create_network(name: str, network_type: str = "bridge") -> None:

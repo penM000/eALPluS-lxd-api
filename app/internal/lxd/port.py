@@ -1,8 +1,8 @@
 import pylxd
 from typing import Dict
-from .lxd_client import client
-from .lxd_network import scan_available_port
-from .general.async_wrap import async_wrap
+from .client import client
+from .network import scan_available_port
+from ..general.async_wrap import async_wrap
 
 
 def get_machine_used_port(

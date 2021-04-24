@@ -2,15 +2,15 @@
 import shlex
 import pylxd
 
-from .lxd_client import client
-from .lxd_network import create_network
-from .lxd_port import get_port
-from .lxd_image import check_existence_of_image
-from .lxd_launch import launch_container_machine
+from .client import client
+from .network import create_network
+from .port import get_port
+from .image import check_existence_of_image
+from .launch import launch_container_machine
 
-from .general.async_wrap import async_wrap
-from .general.get_html import check_http_response
-from .general.response import make_response_dict
+from ..general.async_wrap import async_wrap
+from ..general.get_html import check_http_response
+from ..general.response import make_response_dict
 
 
 # マシンコマンド実行

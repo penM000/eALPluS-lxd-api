@@ -1,5 +1,5 @@
-from .lxd_client import client
-from .general.async_wrap import async_wrap
+from .client import client
+from ..general.async_wrap import async_wrap
 
 
 async def launch_container_machine(
