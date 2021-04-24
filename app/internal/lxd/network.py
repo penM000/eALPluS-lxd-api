@@ -3,18 +3,20 @@ import psutil
 import os
 import socket
 import netifaces as ni
-import random
+
+import time
 from typing import List
 from ipaddress import (
     ip_interface, ip_address)
-
+from functools import lru_cache
 
 from .client import client
 from ..general.async_wrap import async_wrap
 
 
 async def create_network(name: str, network_type: str = "bridge") -> None:
-    if not client.networks.exists(name):
+    async_execute = async_wrap(client.networks.exists)
+    if not await async_execute(name):
         async_execute = async_wrap(client.networks.create)
         await async_execute(
             name,
@@ -27,68 +29,22 @@ async def create_network(name: str, network_type: str = "bridge") -> None:
                 "ipv6.nat": "true"
             }
         )
+    return
 
 
-def get_used_port() -> List[int]:
-    """
-    現在利用中のportと割り当て済みのport一覧作成
-    """
-    used_ports = [int(conn.laddr.port) for conn in psutil.net_connections()
-                  if conn.status == 'LISTEN']
-    for machine in client.containers.all():
-        for key in machine.devices:
-            if "type" in machine.devices[key]:
-                if machine.devices[key]["type"] == "proxy":
-                    used_ports.append(
-                        int(machine.devices[key]["listen"].split(":")[-1]))
-
-    for machine in client.virtual_machines.all():
-        for key in machine.devices:
-            if "type" in machine.devices[key]:
-                if machine.devices[key]["type"] == "proxy":
-                    used_ports.append(
-                        int(machine.devices[key]["listen"].split(":")[-1]))
-    used_ports = sorted(set(used_ports))
-    return used_ports
-
-
-def check_port_available(port: int) -> bool:
-    used_ports = get_used_port()
-    if (port in used_ports):
-        return False
-    else:
-        return True
-
-
-def scan_available_port(start_port: int, mode: str = "random") -> int:
-    """
-    概要:
-        このAPIが動作しているコンピューターの空きポートを検索する関数
-    動作モード:
-        random: ポート割当はランダム
-        countup: 最初からきれいにポートを割り当てる
-    返り値:
-        割当可能なポート番号(int)
-    """
-    port_offset = 0
-    used_ports = get_used_port()
-    available_port_count = (65535 - start_port) - len(
-        [1 for x in used_ports if x >= start_port])
-    if available_port_count < 10:
-        raise Exception("利用可能なport上限を超えました")
-    while True:
-        if mode == "random":
-            port_candidate = random.randint(start_port, 65535)
-        elif mode == "countup":
-            port_candidate = start_port + port_offset
-        if port_candidate in used_ports:
-            port_offset += 1
-            continue
-        else:
-            return port_candidate
+cache_timer = time.time()
 
 
 def get_ip_address(client_ip: str = "0.0.0.0") -> List[str]:
+    global cache_timer
+    if time.time() - cache_timer > 10:
+        cache_get_ip_address.cache_clear()
+        cache_timer = time.time()
+    return cache_get_ip_address(client_ip)
+
+
+@lru_cache(maxsize=128)
+def cache_get_ip_address(client_ip: str = "0.0.0.0") -> List[str]:
     """
     概要:
         このAPIが動作しているIPアドレスから、
@@ -105,10 +61,10 @@ def get_ip_address(client_ip: str = "0.0.0.0") -> List[str]:
         result = []
         address_list = psutil.net_if_addrs()
         for nic in address_list.keys():
-            ni.ifaddresses(nic)
             try:
-                ip_adress = ni.ifaddresses(nic)[ni.AF_INET][0]['addr']
-                subnet = ni.ifaddresses(nic)[ni.AF_INET][0]['netmask']
+                temp = ni.ifaddresses(nic)[ni.AF_INET][0]
+                ip_adress = temp['addr']
+                subnet = temp['netmask']
                 ip = ip_interface(f"{ip_adress}/{subnet}")
                 if ip_address(client_ip) in ip.network:
                     return [str(ip.ip)]
