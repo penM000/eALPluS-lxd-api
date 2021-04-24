@@ -21,7 +21,7 @@ def get_used_port() -> List[int]:
                     used_ports.append(
                         int(instance.devices[key]["listen"].split(":")[-1]))
 
-    for instance in client.virtual_instances.all():
+    for instance in client.virtual_machines.all():
         for key in instance.devices:
             if "type" in instance.devices[key]:
                 if instance.devices[key]["type"] == "proxy":
