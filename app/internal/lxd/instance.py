@@ -62,14 +62,14 @@ async def launch_instance(
         # それ以外は仮想マシン
         else:
             pass
+    # インスタンスの起動が殆ど同時の対処
+    if None is instance:
+        instance = await get_instance(hostname)
+
+    if instance.status != "Running":
+        await async_wrap(instance.start)(wait=True)
 
     assign_port = await get_port(instance, port_name, src_port)
-    if instance.status == "Running":
-        pass
-    else:
-        # portの動的割当
-        assign_port = await get_port(instance, port_name, src_port)
-        await async_wrap(instance.start)(wait=True)
     # 起動確認
     if 1 == startcheck:
         result = await check_http_response(

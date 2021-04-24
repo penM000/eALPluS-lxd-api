@@ -41,10 +41,12 @@ async def launch_container_instance(
             }
         }
     }
-
-    instance = await async_wrap(client.containers.create)(config, wait=True)
-    await async_wrap(instance.start)(wait=True)
-    return instance
+    try:
+        instance = await async_wrap(client.containers.create)(config, wait=True)
+        await async_wrap(instance.start)(wait=True)
+        return instance
+    except BaseException:
+        return None
 
 
 def launch_virtual_instance():
