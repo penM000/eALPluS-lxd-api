@@ -1,8 +1,22 @@
+import time
 from typing import List, Union
+from functools import lru_cache
 from .client import client
 
 
+cache_timer = 0
+
+
 def get_all_image():
+    global cache_timer
+    if time.time() - cache_timer > 10:
+        cache_get_all_image.cache_clear()
+        cache_timer = time.time()
+    return cache_get_all_image()
+
+
+@lru_cache(maxsize=10)
+def cache_get_all_image():
     aliases = []
     fingerprint = []
     for image in client.images.all():
@@ -14,7 +28,7 @@ def get_all_image():
     return aliases, fingerprint
 
 
-def check_existence_of_image(
+async def check_existence_of_image(
         alias: str = "", finger: str = "") -> List[Union[bool, str]]:
     aliases, fingerprint = get_all_image()
     if (alias == "") and (finger == ""):
