@@ -14,19 +14,19 @@ def get_used_port() -> List[int]:
     """
     used_ports = [int(conn.laddr.port) for conn in psutil.net_connections()
                   if conn.status == 'LISTEN']
-    for machine in client.containers.all():
-        for key in machine.devices:
-            if "type" in machine.devices[key]:
-                if machine.devices[key]["type"] == "proxy":
+    for instance in client.containers.all():
+        for key in instance.devices:
+            if "type" in instance.devices[key]:
+                if instance.devices[key]["type"] == "proxy":
                     used_ports.append(
-                        int(machine.devices[key]["listen"].split(":")[-1]))
+                        int(instance.devices[key]["listen"].split(":")[-1]))
 
-    for machine in client.virtual_machines.all():
-        for key in machine.devices:
-            if "type" in machine.devices[key]:
-                if machine.devices[key]["type"] == "proxy":
+    for instance in client.virtual_instances.all():
+        for key in instance.devices:
+            if "type" in instance.devices[key]:
+                if instance.devices[key]["type"] == "proxy":
                     used_ports.append(
-                        int(machine.devices[key]["listen"].split(":")[-1]))
+                        int(instance.devices[key]["listen"].split(":")[-1]))
     used_ports = sorted(set(used_ports))
     return used_ports
 
