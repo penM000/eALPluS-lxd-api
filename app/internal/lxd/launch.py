@@ -1,8 +1,9 @@
 from .client import client
+from .storage import get_all_storage_pool
 from ..general.async_wrap import async_wrap
 
 
-async def launch_container_machine(
+async def launch_container_instance(
         hostname: str = "",
         cpu: int = 2,
         memory: str = "4GB",
@@ -34,19 +35,19 @@ async def launch_container_machine(
             },
             "root": {
                 "path": "/",
-                "pool": "default",
+                "pool": str(get_all_storage_pool()[0]),
                 "size": str(disk_size),
                 "type": "disk",
             }
         }
     }
-    async_execute = async_wrap(client.containers.create)
-    container = await async_execute(config, wait=True)
-    async_execute = async_wrap(container.start)
-    await async_execute(wait=True)
+
+    instance = await async_wrap(client.containers.create)(config, wait=True)
+    await async_wrap(instance.start)(wait=True)
+    return instance
 
 
-def launch_virtual_machine():
+def launch_virtual_instance():
     config = {
         "name": "my-vmapitest",
         "source": {
@@ -61,5 +62,5 @@ def launch_virtual_machine():
                 "pool": "default",
                 "type": "disk",
                 "size": "20GB"}}}
-    virtual_machines = client.virtual_machines.create(config, wait=True)
-    virtual_machines.start(wait=True)
+    virtual_instances = client.virtual_instances.create(config, wait=True)
+    virtual_instances.start(wait=True)
