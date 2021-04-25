@@ -11,6 +11,13 @@ async def check_http_response(https, assign_port, status, time_out) -> bool:
     )
 
 
+async def oneshot_check_http_response(https, assign_port, status) -> bool:
+    return await oneshot_get_html(
+        make_url(https, assign_port),
+        status,
+    )
+
+
 def make_url(https, assign_port) -> str:
     # URL生成
     try_url = ""
@@ -21,6 +28,13 @@ def make_url(https, assign_port) -> str:
     try_url += "127.0.0.1"
     try_url += ":" + str(assign_port)
     return try_url
+
+
+async def oneshot_get_html(url, status) -> bool:
+    result = await get_html(url)
+    if str(result) == str(status):
+        return True
+    return False
 
 
 async def wait_get_html(url, status, time_out) -> bool:
