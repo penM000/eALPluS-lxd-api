@@ -8,6 +8,7 @@ from .network import create_network
 from .port import get_port
 from .image import check_existence_of_image
 from .launch import launch_container_instance
+from .tag import instance_tag
 
 
 from ..general.get_html import check_http_response
@@ -62,21 +63,29 @@ async def launch_instance(
         # それ以外は仮想マシン
         else:
             pass
-    # インスタンスの起動が殆ど同時の対処
+    # インスタンスの作成が殆ど同時の対処
     if instance is None:
         while True:
             try:
                 instance = await get_instance(hostname)
             except BaseException:
                 instance = None
+                await asyncio.sleep(0.1)
             if instance is not None:
                 break
 
+    # インスタンスの作成前に起動することを防止
     if instance.status != "Running":
-        await asyncio.sleep(2)
-        instance = await get_instance(hostname)
-        if instance.status != "Running":
-            await async_wrap(instance.start)(wait=True)
+        while True:
+            instance = await get_instance(hostname)
+            tag = instance_tag(instance)
+            if instance.status == "Running":
+                break
+            if "creating" in tag.tag and tag.tag["creating"] == "0":
+                await async_wrap(instance.start)(wait=True)
+                break
+            else:
+                await asyncio.sleep(0.1)
 
     assign_port = await get_port(instance, port_name, src_port)
     # 起動確認

@@ -1,5 +1,6 @@
 from .client import client
 from .storage import get_all_storage_pool
+from .tag import instance_tag
 from ..general.async_wrap import async_wrap
 
 
@@ -31,8 +32,7 @@ async def launch_container_instance(
             "limits.cpu": str(cpu),
             "limits.memory": str(memory),
             "security.nesting": "1",
-            "user.role": str(role_id),
-            "user.class": str(class_id)},
+        },
         "devices": {
             "eth0": {
                 "name": "eth0",
@@ -48,8 +48,20 @@ async def launch_container_instance(
         }
     }
     try:
+        # インスタンスの作成
         instance = await async_wrap(client.containers.create)(config, wait=True)
+        # インスタンス情報の付与
+        tag = instance_tag(instance)
+        tag.tag["creating"] = "1"
+        tag.tag["role_id"] = role_id
+        tag.tag["class_id"] = class_id
+        await async_wrap(tag.save)()
+        # インスタンスの起動
         await async_wrap(instance.start)(wait=True)
+        # 初回起動の終了記録
+        tag.tag["creating"] = "0"
+        await async_wrap(tag.save)()
+
         print(f"create new instance:{hostname}")
         return instance
     except BaseException:
