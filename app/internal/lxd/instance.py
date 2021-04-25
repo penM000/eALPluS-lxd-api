@@ -11,7 +11,7 @@ from .launch import launch_container_instance
 from .tag import instance_tag
 
 
-from ..general.get_html import check_http_response
+from ..general.get_html import check_http_response, oneshot_check_http_response
 from ..general.response import make_response_dict
 from ..general.async_wrap import async_wrap
 
@@ -85,21 +85,27 @@ async def launch_instance(
                 await async_wrap(instance.start)(wait=True)
                 break
             else:
+                # 初回起動は長めに設定
+                #starttimeout = 30
                 await asyncio.sleep(0.1)
-
+    # port割当
     assign_port = await get_port(instance, port_name, src_port)
+
     # 起動確認
     if 1 == startcheck:
-        result = await check_http_response(
-            https,
-            assign_port,
-            httpstatus,
-            starttimeout
-        )
-        if result:
-            return make_response_dict(assign_port=assign_port)
-        else:
-            return make_response_dict(False, "timeout_error")
+        for loop in range(starttimeout):
+            result = await oneshot_check_http_response(https,
+                                                       assign_port,
+                                                       httpstatus)
+            if result:
+                return make_response_dict(assign_port=assign_port)
+            else:
+                await asyncio.sleep(1)
+                instance = await get_instance(hostname)
+                assign_port = await get_port(instance, port_name, src_port)
+
+        return make_response_dict(
+            False, "timeout_error", assign_port=assign_port)
     else:
         return make_response_dict(assign_port=assign_port)
 
