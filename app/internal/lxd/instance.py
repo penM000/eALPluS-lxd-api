@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import asyncio
 import pylxd
 from typing import Union
 
@@ -41,13 +42,12 @@ async def launch_instance(
         return make_response_dict(False, temp[1])
 
     instance = await get_instance(hostname)
-    # print(instance.name)
     # マシンが無ければ新規作成
     if None is instance:
         # ネットワーク作成
         await create_network(network)
         if instancetype == "container":
-            print(f"create new container:{hostname}")
+
             instance = await launch_container_instance(
                 hostname=hostname,
                 cpu=cpu,
@@ -63,11 +63,20 @@ async def launch_instance(
         else:
             pass
     # インスタンスの起動が殆ど同時の対処
-    if None is instance:
-        instance = await get_instance(hostname)
+    if instance is None:
+        while True:
+            try:
+                instance = await get_instance(hostname)
+            except BaseException:
+                instance = None
+            if instance is not None:
+                break
 
     if instance.status != "Running":
-        await async_wrap(instance.start)(wait=True)
+        await asyncio.sleep(2)
+        instance = await get_instance(hostname)
+        if instance.status != "Running":
+            await async_wrap(instance.start)(wait=True)
 
     assign_port = await get_port(instance, port_name, src_port)
     # 起動確認
@@ -86,28 +95,19 @@ async def launch_instance(
         return make_response_dict(assign_port=assign_port)
 
 
-def get_all_instance_name():
-    A = []
-    B = [container.name for container in client.containers.all()]
-    C = [virtual_instance.name for virtual_instance
-         in client.virtual_instances.all()]
-    A.extend(B)
-    A.extend(C)
-    return A
+async def get_all_instance_name():
+    all_instances = await async_wrap(client.instances.all)()
+    all_instances_name = [instance.name for instance in all_instances]
+    return all_instances_name
 
 
-async def get_instance(name) -> Union[pylxd.models.Container,
-                                      pylxd.models.VirtualMachine]:
+async def get_instance(name: str) -> Union[
+        pylxd.models.instance.Instance,
+        None]:
+
     instance = None
-
     try:
-        async_execute = async_wrap(client.containers.get)
-        instance = await async_execute(name)
+        instance = await async_wrap(client.instances.get)(name)
     except pylxd.exceptions.NotFound:
-        pass
-    try:
-        async_execute = async_wrap(client.virtual_machines.get)
-        instance = await async_execute(name)
-    except pylxd.exceptions.NotFound:
-        pass
+        return instance
     return instance
