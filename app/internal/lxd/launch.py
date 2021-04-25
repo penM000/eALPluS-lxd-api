@@ -11,8 +11,13 @@ async def launch_container_instance(
         fingerprint: str = "",
         aliases: str = "",
         network: str = "lxdbr0",
+        instance_type: str = "container",
         role_id: str = "",
         class_id: str = ""):
+    """
+    container
+    virtual-machine
+    """
     image = {}
     if fingerprint != "":
         image = {"type": "image", "fingerprint": str(fingerprint)}
@@ -21,6 +26,7 @@ async def launch_container_instance(
     config = {
         "name": str(hostname),
         "source": image,
+        "type": str(instance_type),
         "config": {
             "limits.cpu": str(cpu),
             "limits.memory": str(memory),
@@ -44,6 +50,7 @@ async def launch_container_instance(
     try:
         instance = await async_wrap(client.containers.create)(config, wait=True)
         await async_wrap(instance.start)(wait=True)
+        print(f"create new instance:{hostname}")
         return instance
     except BaseException:
         return None
