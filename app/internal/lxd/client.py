@@ -1,4 +1,6 @@
+import os
 from pylxd import Client
+
 
 """
 client = Client(
@@ -11,4 +13,5 @@ client = Client(endpoint="https://192.168.1.80:8443", verify=False)
 client.authenticate("password")
 
 """
+os.environ["PYLXD_WARNINGS"] = "none"
 client = Client()
