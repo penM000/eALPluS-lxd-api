@@ -1,4 +1,4 @@
-import time
+
 from fastapi import APIRouter, Request
 from starlette.responses import RedirectResponse
 
@@ -126,5 +126,6 @@ async def stop_container_by_course_id_student_id(course_id: str,
         return make_response_dict(False, "インスタンスが見つかりません")
     if instance.status == "Running":
         await stop_instance(instance)
+        return make_response_dict(True, "インスタンスを停止しました")
     else:
         return make_response_dict(False, "インスタンスは既に停止しています")
