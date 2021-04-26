@@ -16,7 +16,8 @@ app.include_router(lxd.router)
 async def redirect():
     #url = app.url_path_for("docs")
 
-    response = RedirectResponse(url="/docs")
+    response = RedirectResponse(
+        url="https://ealplus.shinshu-u.ac.jp/connection")
     return response
 
 
