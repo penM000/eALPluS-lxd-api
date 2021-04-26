@@ -17,7 +17,6 @@ async def exec_command_to_instance(instance: pylxd.models.instance.Instance,
             elif isinstance(i, list):
                 temp = i
             result = await async_wrap(instance.execute)(temp)
-            print(result)
     else:
         cmd = shlex.split(cmd)
         result = await async_wrap(instance.execute)(cmd)
