@@ -8,8 +8,17 @@ from ..general.async_wrap import async_wrap
 # マシンコマンド実行
 
 
-async def exec_command_to_machine(machine: Union[pylxd.models.VirtualMachine,
-                                                 pylxd.models.Container], cmd):
-    async_machine_execute = async_wrap(machine.execute)
-    result = await async_machine_execute(shlex.split(cmd))
-    return result
+async def exec_command_to_instance(instance: pylxd.models.instance.Instance,
+                                   cmd: Union[str, list]):
+    if isinstance(cmd, list):
+        for i in cmd:
+            if isinstance(i, str):
+                temp = shlex.split(i)
+            elif isinstance(i, list):
+                temp = i
+            result = await async_wrap(instance.execute)(temp)
+            print(result)
+    else:
+        cmd = shlex.split(cmd)
+        result = await async_wrap(instance.execute)(cmd)
+        return result

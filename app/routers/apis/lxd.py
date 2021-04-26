@@ -10,6 +10,7 @@ from ...internal.lxd.network import get_ip_address
 
 
 from ...internal.general.response import make_response_dict
+from ...internal.general.exercise import setup_ssh
 
 
 router = APIRouter(
@@ -129,3 +130,8 @@ async def stop_container_by_course_id_student_id(course_id: str,
         return make_response_dict(True, "インスタンスを停止しました")
     else:
         return make_response_dict(False, "インスタンスは既に停止しています")
+
+
+@router.get("/container/ssh_setup/{course_id}")
+async def setup_ssh_by_course_id(course_id):
+    return await setup_ssh(course_id)
