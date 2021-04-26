@@ -76,6 +76,7 @@ async def launch_instance(
 
     # インスタンスの作成前に起動することを防止
     if instance.status != "Running":
+        max_try = 200
         while True:
             instance = await get_instance(hostname)
             tag = instance_tag(instance)
@@ -84,9 +85,16 @@ async def launch_instance(
             if "creating" in tag.tag and tag.tag["creating"] == "0":
                 await async_wrap(instance.start)(wait=True)
                 break
+            elif max_try < 0:
+                # 手動で作成されたインスタンスの場合
+                tag.tag["creating"] = "0"
+                tag.tag["role_id"] = role_id
+                tag.tag["class_id"] = class_id
+                await async_wrap(tag.save)()
+                await async_wrap(instance.start)(wait=True)
             else:
                 # 初回起動は長めに設定
-                #starttimeout = 30
+                max_try -= 1
                 await asyncio.sleep(0.1)
     # port割当
     assign_port = await get_port(instance, port_name, src_port)
