@@ -30,7 +30,7 @@ async def launch_instance(
     startcheck=1,
     https=0,
     httpstatus=200,
-    starttimeout=20,
+    starttimeout=10,
     startportassign=49152,
     role_id="",
     class_id=""
@@ -111,7 +111,7 @@ async def launch_instance(
             if result:
                 return make_response_dict(assign_port=assign_port)
             else:
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 instance = await get_instance(hostname)
                 if instance is None:
                     return make_response_dict(
@@ -140,3 +140,11 @@ async def get_instance(name: str) -> Union[
     except pylxd.exceptions.NotFound:
         return instance
     return instance
+
+
+async def stop_instance(instance: pylxd.models.instance.Instance) -> bool:
+    try:
+        await async_wrap(instance.stop)(wait=True)
+        return True
+    except BaseException:
+        return False
