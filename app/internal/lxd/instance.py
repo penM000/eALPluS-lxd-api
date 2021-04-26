@@ -79,6 +79,9 @@ async def launch_instance(
         max_try = 200
         while True:
             instance = await get_instance(hostname)
+            if instance is None:
+                return make_response_dict(
+                    False, "instance_deleted_other_operation")
             tag = instance_tag(instance)
             if instance.status == "Running":
                 break
@@ -110,6 +113,9 @@ async def launch_instance(
             else:
                 await asyncio.sleep(1)
                 instance = await get_instance(hostname)
+                if instance is None:
+                    return make_response_dict(
+                        False, "instance_deleted_other_operation")
                 assign_port = await get_port(instance, port_name, src_port)
 
         return make_response_dict(
