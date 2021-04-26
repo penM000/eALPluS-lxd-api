@@ -11,7 +11,7 @@ from .launch import launch_container_instance
 from .tag import instance_tag
 
 
-from ..general.get_html import check_http_response, oneshot_check_http_response
+from ..general.get_html import oneshot_check_http_response
 from ..general.response import make_response_dict
 from ..general.async_wrap import async_wrap
 
@@ -93,15 +93,22 @@ async def launch_instance(
             if instance.status == "Running":
                 break
             if "creating" in tag.tag and tag.tag["creating"] == "0":
-                await async_wrap(instance.start)(wait=True)
-                break
+                if await start_instance(instance):
+                    break
+                else:
+                    return make_response_dict(
+                        False, "インスタンス起動中にインスタンスの削除処理が行われました")
             elif max_try < 0:
                 # 手動で作成されたインスタンスの場合
                 tag.tag["creating"] = "0"
                 tag.tag["role_id"] = role_id
                 tag.tag["class_id"] = class_id
                 await async_wrap(tag.save)()
-                await async_wrap(instance.start)(wait=True)
+                if await start_instance(instance):
+                    break
+                else:
+                    return make_response_dict(
+                        False, "インスタンス起動中にインスタンスの削除処理が行われました")
             else:
                 max_try -= 1
                 await asyncio.sleep(0.1)
@@ -154,6 +161,14 @@ async def get_instance(name: str) -> Union[
 async def stop_instance(instance: pylxd.models.instance.Instance) -> bool:
     try:
         await async_wrap(instance.stop)(wait=True)
+        return True
+    except BaseException:
+        return False
+
+
+async def start_instance(instance: pylxd.models.instance.Instance) -> bool:
+    try:
+        await async_wrap(instance.start)(wait=True)
         return True
     except BaseException:
         return False
