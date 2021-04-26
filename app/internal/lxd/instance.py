@@ -81,7 +81,7 @@ async def launch_instance(
             instance = await get_instance(hostname)
             if instance is None:
                 return make_response_dict(
-                    False, "instance_deleted_other_operation")
+                    False, "インスタンス起動中にインスタンスの削除処理が行われました")
             tag = instance_tag(instance)
             if instance.status == "Running":
                 break
@@ -96,7 +96,6 @@ async def launch_instance(
                 await async_wrap(tag.save)()
                 await async_wrap(instance.start)(wait=True)
             else:
-                # 初回起動は長めに設定
                 max_try -= 1
                 await asyncio.sleep(0.1)
     # port割当
@@ -115,7 +114,10 @@ async def launch_instance(
                 instance = await get_instance(hostname)
                 if instance is None:
                     return make_response_dict(
-                        False, "instance_deleted_other_operation")
+                        False, "インスタンス起動中にインスタンスの削除処理が行われました")
+                elif instance.status != "Running":
+                    return make_response_dict(
+                        False, "インスタンス起動中にインスタンスの停止処理が行われました")
                 assign_port = await get_port(instance, port_name, src_port)
 
         return make_response_dict(
