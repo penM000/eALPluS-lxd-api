@@ -63,16 +63,23 @@ async def launch_instance(
         # それ以外は仮想マシン
         else:
             pass
+    # この行以降、instanceが存在しないことは想定しない
+    # instanceが存在しない場合は削除が上記タイミングで行われた場合である
     # インスタンスの作成が殆ど同時の対処
     if instance is None:
+        max_try = 200
         while True:
             try:
                 instance = await get_instance(hostname)
             except BaseException:
                 instance = None
+                max_try -= 1
                 await asyncio.sleep(0.1)
             if instance is not None:
                 break
+            if max_try < 0:
+                return make_response_dict(
+                    False, "インスタンス起動中にインスタンスの削除処理が行われました")
 
     # インスタンスの作成前に起動することを防止
     if instance.status != "Running":
