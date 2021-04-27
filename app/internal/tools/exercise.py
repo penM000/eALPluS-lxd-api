@@ -45,6 +45,7 @@ async def get_teacher_and_student_instances(class_id):
     all_instances = await async_wrap(client.instances.all)()
     teacher_instances = []
     student_instances = []
+    syslog_instances = []
     for instance in all_instances:
         tag = instance_tag(instance)
         # インスタンスに識別がある場合
@@ -54,9 +55,16 @@ async def get_teacher_and_student_instances(class_id):
                     teacher_instances.append(instance)
                 elif tag.tag["role_id"] == "student":
                     student_instances.append(instance)
+                elif tag.tag["role_id"] == "syslog":
+                    syslog_instances.append(instance)
         else:
             pass
-    return {"teacher": teacher_instances, "student": student_instances}
+    result = {
+        "teacher": teacher_instances,
+        "student": student_instances,
+        "syslog": syslog_instances
+    }
+    return result
 
 
 async def send_student_list(instance, student_instances):
@@ -69,17 +77,20 @@ async def send_student_list(instance, student_instances):
 
 
 async def setup_ssh(class_id):
-    result = await get_teacher_and_student_instances(class_id)
-    teacher_instances = result["teacher"]
-    student_instances = result["student"]
-    if len(teacher_instances) == 0 or len(student_instances) == 0:
+    instances = await get_teacher_and_student_instances(class_id)
+
+    if len(instances["teacher"]) == 0 or len(instances["student"]) == 0:
         return False
 
     pubs = []
-    for instance in teacher_instances:
+    for instance in instances["teacher"]:
         pubs.append(await gen_ssh_key(instance))
-        await send_student_list(instance, student_instances)
-    for instance in student_instances:
+        await send_student_list(instance, instances["student"])
+
+    for instance in instances["student"]:
+        await send_ssh_pub(instance, b"".join(pubs))
+
+    for instance in instances["syslog"]:
         await send_ssh_pub(instance, b"".join(pubs))
 
     return True
