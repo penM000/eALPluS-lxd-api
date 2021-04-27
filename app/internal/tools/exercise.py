@@ -138,7 +138,7 @@ async def setup_syslog(class_id):
     teacher_instances = result["teacher"]
     student_instances = result["student"]
     if len(teacher_instances) == 0 or len(student_instances) == 0:
-        return False
+        # return False
         pass
 
     await setup_receive_syslog(class_id)
