@@ -10,7 +10,7 @@ from ...internal.lxd.network import get_ip_address
 
 
 from ...internal.general.response import make_response_dict
-from ...internal.tools.exercise import setup_ssh
+from ...internal.tools.exercise import setup_ssh, setup_syslog
 
 
 router = APIRouter(
@@ -115,8 +115,8 @@ async def get_container_ip_port(class_id: str,
 
 @router.get("/container/stop/{class_id}/{student_id}")
 async def stop_container_by_class_id_student_id(class_id: str,
-                                                 student_id: str,
-                                                 ):
+                                                student_id: str,
+                                                ):
     """
     インスタンスを停止します。\n
     class_id = 授業コード(イメージ名)\n
@@ -135,3 +135,8 @@ async def stop_container_by_class_id_student_id(class_id: str,
 @router.get("/container/ssh_setup/{class_id}")
 async def setup_ssh_by_class_id(class_id):
     return await setup_ssh(class_id)
+
+
+@router.get("/container/syslog_setup/{class_id}")
+async def setup_syslog_by_class_id(class_id):
+    return await setup_syslog(class_id)
