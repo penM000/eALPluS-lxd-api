@@ -1,8 +1,11 @@
 import time
 from typing import List, Union
 from functools import lru_cache
-from .client import client
 
+import pylxd
+
+from .client import client
+from ..general.async_wrap import async_wrap
 
 cache_timer = 0
 
@@ -42,3 +45,11 @@ async def check_existence_of_image(
             len([s for s in fingerprint if s.startswith(finger)]) == 0:
         return [False, f"指定された「{finger}」イメージフィンガープリントが見つかりません"]
     return [True, None]
+
+
+async def download_ubuntu_image() -> pylxd.models.image.Image:
+    image = await async_wrap(client.images.create_from_simplestreams)(
+        server="https://cloud-images.ubuntu.com/releases",
+        alias="ubuntu",
+        auto_update=True)
+    return image
