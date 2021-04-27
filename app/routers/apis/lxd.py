@@ -10,7 +10,7 @@ from ...internal.lxd.network import get_ip_address
 
 
 from ...internal.general.response import make_response_dict
-from ...internal.general.exercise import setup_ssh
+from ...internal.tools.exercise import setup_ssh
 
 
 router = APIRouter(
@@ -27,8 +27,8 @@ async def get_ip(request: Request):
     return get_ip_address(request.client.host)[0]
 
 
-@router.get("/container/url/{course_id}/{student_id}")
-async def get_container_url(course_id: str,
+@router.get("/container/url/{class_id}/{student_id}")
+async def get_container_url(class_id: str,
                             student_id: str,
                             request: Request,
                             src_port: int = 8080,
@@ -40,20 +40,20 @@ async def get_container_url(course_id: str,
                             storage: str = "32GB"
                             ):
     """
-    course_id = 授業コード(イメージ名)\n
+    class_id = 授業コード(イメージ名)\n
     student_id = 学籍番号(授業コード内で一意に定まるもの)
     """
 
     if image == "":
-        imagealias = course_id
+        imagealias = class_id
     else:
         imagealias = image
-    result = await launch_instance(hostname=f"{course_id}-{student_id}",
+    result = await launch_instance(hostname=f"{class_id}-{student_id}",
                                    imagealias=imagealias,
-                                   network=course_id,
+                                   network=class_id,
                                    src_port=src_port,
                                    port_name=port_name,
-                                   class_id=course_id,
+                                   class_id=class_id,
                                    role_id=ealps_role,
                                    cpu=cpu,
                                    memory=memory,
@@ -71,8 +71,8 @@ async def get_container_url(course_id: str,
         return result
 
 
-@router.get("/container/ip_port/{course_id}/{student_id}")
-async def get_container_ip_port(course_id: str,
+@router.get("/container/ip_port/{class_id}/{student_id}")
+async def get_container_ip_port(class_id: str,
                                 student_id: str,
                                 request: Request,
                                 src_port: int = 8080,
@@ -84,20 +84,20 @@ async def get_container_ip_port(course_id: str,
                                 storage: str = "32GB"
                                 ):
     """
-    course_id = 授業コード(イメージ名)\n
+    class_id = 授業コード(イメージ名)\n
     student_id = 学籍番号(授業コード内で一意に定まるもの)
     """
 
     if image == "":
-        imagealias = course_id
+        imagealias = class_id
     else:
         imagealias = image
-    result = await launch_instance(hostname=f"{course_id}-{student_id}",
+    result = await launch_instance(hostname=f"{class_id}-{student_id}",
                                    imagealias=imagealias,
-                                   network=course_id,
+                                   network=class_id,
                                    src_port=src_port,
                                    port_name=port_name,
-                                   class_id=course_id,
+                                   class_id=class_id,
                                    role_id=ealps_role,
                                    cpu=cpu,
                                    memory=memory,
@@ -113,16 +113,16 @@ async def get_container_ip_port(course_id: str,
         return result
 
 
-@router.get("/container/stop/{course_id}/{student_id}")
-async def stop_container_by_course_id_student_id(course_id: str,
+@router.get("/container/stop/{class_id}/{student_id}")
+async def stop_container_by_class_id_student_id(class_id: str,
                                                  student_id: str,
                                                  ):
     """
     インスタンスを停止します。\n
-    course_id = 授業コード(イメージ名)\n
+    class_id = 授業コード(イメージ名)\n
     student_id = 学籍番号(授業コード内で一意に定まるもの)
     """
-    instance = await get_instance(f"{course_id}-{student_id}")
+    instance = await get_instance(f"{class_id}-{student_id}")
     if instance is None:
         return make_response_dict(False, "インスタンスが見つかりません")
     if instance.status == "Running":
@@ -132,6 +132,6 @@ async def stop_container_by_course_id_student_id(course_id: str,
         return make_response_dict(False, "インスタンスは既に停止しています")
 
 
-@router.get("/container/ssh_setup/{course_id}")
-async def setup_ssh_by_course_id(course_id):
-    return await setup_ssh(course_id)
+@router.get("/container/ssh_setup/{class_id}")
+async def setup_ssh_by_class_id(class_id):
+    return await setup_ssh(class_id)
