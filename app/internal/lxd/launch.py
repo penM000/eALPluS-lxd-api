@@ -14,7 +14,8 @@ async def launch_container_instance(
         network: str = "lxdbr0",
         instance_type: str = "container",
         role_id: str = "",
-        class_id: str = ""):
+        class_id: str = "",
+        autostart:str = "0"):
     """
     container
     virtual-machine
@@ -32,6 +33,7 @@ async def launch_container_instance(
             "limits.cpu": str(cpu),
             "limits.memory": str(memory),
             "security.nesting": "1",
+            "boot.autostart": str(autostart)
         },
         "devices": {
             "eth0": {
