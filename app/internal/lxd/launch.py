@@ -15,7 +15,7 @@ async def launch_container_instance(
         instance_type: str = "container",
         role_id: str = "",
         class_id: str = "",
-        autostart: str = "0"):
+        autostart:str = "0"):
     """
     container
     virtual-machine
@@ -32,6 +32,8 @@ async def launch_container_instance(
         "config": {
             "limits.cpu": str(cpu),
             "limits.memory": str(memory),
+            "security.idmap.isolated ": "true",
+            "security.nesting": "true"
             "boot.autostart": str(autostart)
         },
         "devices": {
