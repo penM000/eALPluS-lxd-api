@@ -21,10 +21,12 @@ command_dict = {
     "receive_syslog": [
         "chmod +x /receive_syslog_setting.sh",
         "/receive_syslog_setting.sh",
+        "rm receive_syslog_setting.sh"
     ],
     "send_syslog": [
         "chmod +x /send_syslog_setting.sh",
         "/send_syslog_setting.sh",
+        "rm /send_syslog_setting.sh"
     ]
 }
 
@@ -96,6 +98,13 @@ async def setup_ssh(class_id):
     return True
 
 
+async def readfile(path) -> bytes:
+    f = await async_wrap(open)(path, mode="r")
+    filedata = await async_wrap(f.read)()
+    await async_wrap(f.close)()
+    return filedata
+
+
 async def setup_receive_syslog(class_id):
     hostname = f"{class_id}-syslog-server"
     network = class_id
@@ -115,16 +124,17 @@ async def setup_receive_syslog(class_id):
         )
     if instance.status != "Running":
         await async_wrap(instance.start)(wait=True)
-    filedata = open(
-        "./app/internal/tools/script/receive_syslog_setting.sh").read()
+
+    path = "./app/internal/tools/script/receive_syslog_setting.sh"
+    filedata = await readfile(path)
     await async_wrap(instance.files.put)("/receive_syslog_setting.sh", filedata)
     await exec_command_to_instance(instance, command_dict["receive_syslog"])
 
 
 async def setup_send_syslog(instances, class_id):
     hostname = f"{class_id}-syslog-server"
-    filedata = open(
-        "./app/internal/tools/script/send_syslog_setting.sh").read()
+    path = "./app/internal/tools/script/send_syslog_setting.sh"
+    filedata = await readfile(path)
     filedata = filedata.replace("syslog-server", hostname).encode()
     for instance in instances:
         if instance.status != "Running":
