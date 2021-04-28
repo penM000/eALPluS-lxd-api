@@ -110,7 +110,8 @@ async def setup_receive_syslog(class_id):
             fingerprint=image.fingerprint,
             network=network,
             role_id="syslog",
-            class_id=class_id
+            class_id=class_id,
+            autostart="1"
         )
     if instance.status != "Running":
         await async_wrap(instance.start)(wait=True)
