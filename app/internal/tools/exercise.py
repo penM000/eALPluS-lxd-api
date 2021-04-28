@@ -1,4 +1,5 @@
 import os
+import asyncio
 import pylxd
 from ..lxd.client import client
 from ..lxd.command import exec_command_to_instance
@@ -89,11 +90,13 @@ async def setup_ssh(class_id):
         pubs.append(await gen_ssh_key(instance))
         await send_student_list(instance, instances["student"])
 
+    tasks = []
     for instance in instances["student"]:
-        await send_ssh_pub(instance, b"".join(pubs))
-
+        tasks.append(send_ssh_pub(instance, b"".join(pubs)))
     for instance in instances["syslog"]:
-        await send_ssh_pub(instance, b"".join(pubs))
+        tasks.append(send_ssh_pub(instance, b"".join(pubs)))
+
+    await asyncio.gather(*tasks)
 
     return True
 
@@ -136,12 +139,17 @@ async def setup_send_syslog(instances, class_id):
     path = "./app/internal/tools/script/send_syslog_setting.sh"
     filedata = await readfile(path)
     filedata = filedata.replace("syslog-server", hostname).encode()
-    for instance in instances:
+
+    async def task(instance):
         if instance.status != "Running":
             await async_wrap(instance.start)(wait=True)
         print(instance.name)
         await async_wrap(instance.files.put)("/send_syslog_setting.sh", filedata)
         await exec_command_to_instance(instance, command_dict["send_syslog"])
+    tasks = []
+    for instance in instances:
+        tasks.append(task(instance))
+    await asyncio.gather(*tasks)
 
 
 async def setup_syslog(class_id):
