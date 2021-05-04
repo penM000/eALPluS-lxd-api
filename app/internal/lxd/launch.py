@@ -32,7 +32,7 @@ async def launch_container_instance(
         "config": {
             "limits.cpu": str(cpu),
             "limits.memory": str(memory),
-            "security.idmap.isolated ": "true",
+            "security.idmap.isolated": "true",
             "security.nesting": "true",
             "boot.autostart": str(autostart)
         },
