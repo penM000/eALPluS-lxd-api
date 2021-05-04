@@ -1,0 +1,63 @@
+<html>
+
+<head>
+    <title>Item Details</title>
+    <link rel='stylesheet' href='https://ealplus.shinshu-u.ac.jp/ealplus-public/stylesheets/style.css' />
+    <link rel='stylesheet' href='https://ealplus.shinshu-u.ac.jp/ealplus-public/stylesheets/tool_list.css' />
+    <link rel='stylesheet' href='https://ealplus.shinshu-u.ac.jp/ealplus-public/stylesheets/form.css' />
+</head>
+
+<body>
+    <div class="container">
+        <div class="top_contents">
+            <div class="title">
+                <p>lxd 演習システム 管理ツール</p>
+            </div>
+        </div>
+
+        <div class="main_contents">
+            <div class="addtool_form">
+                <a>{{ class_id }}</a>
+                <div>
+                    <table>
+                        <thead>
+                            <th>インスタンス名</th>
+                            <th>メモリ使用量</th>
+                            <th>ディスク使用量</th>
+                            <th>状態</th>
+                        </thead>
+                        <tbody>
+                            {% for instance in instances_status %}
+                            <tr>
+                                <td>{{ instance }}</td>
+                                <td>{{ instances_status[instance]["memory"] }}</td>
+                                <td>{{ instances_status[instance]["disk"] }}</td>
+                                <td>{{ instances_status[instance]["status"] }}</td>
+                                <td>
+                                    {% if "Running" == instances_status[instance]["status"] %}
+                                    <button type="button" onclick="alert('hello!')">
+                                        停止
+                                    </button>
+                                    {% elif "Stopped" == instances_status[instance]["status"] %}
+                                    <button type="button" onclick="alert('hello!')">
+                                        起動
+                                    </button>
+                                    {% endif %}
+                                </td>
+
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

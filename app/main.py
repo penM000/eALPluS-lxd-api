@@ -1,15 +1,14 @@
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from starlette.responses import RedirectResponse
 
 from .routers.apis import lxd
-
-import logging
-from fastapi.logger import logger as fastapi_logger
+from .routers.html import html
 
 
 app = FastAPI()
 
 app.include_router(lxd.router)
+app.include_router(html.router)
 
 
 @app.get("/")
