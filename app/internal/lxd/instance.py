@@ -59,6 +59,9 @@ async def launch_instance(
                 role_id=role_id,
                 class_id=class_id
             )
+            if instance is None:
+                return make_response_dict(
+                    False, "インスタンス作成に失敗しました")
 
         # それ以外は仮想マシン
         else:
