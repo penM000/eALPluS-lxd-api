@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import asyncio
 import pylxd
-from typing import Union
+from typing import Union, List
 
 from .client import client
 from .network import create_network
@@ -140,10 +140,29 @@ async def launch_instance(
         return make_response_dict(assign_port=assign_port)
 
 
+async def operation_of_class_instances(class_id, mode: str = "start"):
+    instances = await get_all_instance()
+    task = []
+    for instance in instances:
+        if instance.name.startswith(class_id):
+            if mode == "start" and instance.status == "Stopped":
+                task.append(async_wrap(instance.start)(wait=True))
+            elif mode == "stop" and instance.status == "Running":
+                task.append(async_wrap(instance.stop)(wait=True))
+            elif mode == "delete" and instance.status == "Stopped":
+                task.append(async_wrap(instance.delete)(wait=True))
+    return await asyncio.gather(*task)
+
+
 async def get_all_instance_name():
     all_instances = await async_wrap(client.instances.all)()
     all_instances_name = [instance.name for instance in all_instances]
     return all_instances_name
+
+
+async def get_all_instance() -> List[pylxd.models.instance.Instance]:
+    all_instances = await async_wrap(client.instances.all)()
+    return all_instances
 
 
 async def get_instance(name: str) -> Union[

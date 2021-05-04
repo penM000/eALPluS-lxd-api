@@ -1,11 +1,13 @@
 
 from fastapi import APIRouter, Request
+
 from starlette.responses import RedirectResponse
 
 
 from ...internal.lxd.instance import (launch_instance,
                                       get_instance,
-                                      stop_instance)
+                                      stop_instance,
+                                      operation_of_class_instances)
 from ...internal.lxd.network import get_ip_address
 
 
@@ -140,3 +142,18 @@ async def setup_ssh_by_class_id(class_id):
 @router.get("/container/syslog_setup/{class_id}")
 async def setup_syslog_by_class_id(class_id):
     return await setup_syslog(class_id)
+
+
+@router.get("/container/start/{class_id}")
+async def start_container_by_class_id(class_id: str):
+    return await operation_of_class_instances(class_id, "start")
+
+
+@router.get("/container/stop/{class_id}")
+async def stop_container_by_class_id(class_id: str):
+    return await operation_of_class_instances(class_id, "stop")
+
+
+@router.get("/container/delete/{class_id}")
+async def delete_container_by_class_id(class_id: str):
+    return await operation_of_class_instances(class_id, "delete")
