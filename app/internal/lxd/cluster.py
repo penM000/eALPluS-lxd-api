@@ -38,8 +38,11 @@ async def get_all_node_used_port() -> List[int]:
                 path = "/node/used_port"
                 url = f"http://{ip}:{port}{path}"
                 tasks.append(get_html(url))
+        import time
+        now = time.time()
         task_result = await asyncio.gather(*tasks)
-        for result in task_result: 
+        print(time.time() - now)
+        for result in task_result:
             if result is None:
                 continue
             else:
