@@ -6,7 +6,7 @@ from typing import List, Dict
 import pylxd
 
 from .client import client
-from .cluster import check_cluster
+from .cluster import check_cluster, get_cluster_status
 from ..general.async_wrap import async_wrap
 
 
@@ -14,8 +14,7 @@ async def get_listen_status() -> List[int]:
     net_status = await async_wrap(psutil.net_connections)()
     listen_ports = [int(conn.laddr.port) for conn in net_status
                     if conn.status == 'LISTEN']
-    if await check_cluster():
-        pass
+
     listen_ports = sorted(set(listen_ports))
     return listen_ports
 
