@@ -14,7 +14,7 @@ async def get_listen_status() -> List[int]:
     net_status = await async_wrap(psutil.net_connections)()
     listen_ports = [int(conn.laddr.port) for conn in net_status
                     if conn.status == 'LISTEN']
-    if check_cluster():
+    if await check_cluster():
         pass
     listen_ports = sorted(set(listen_ports))
     return listen_ports
