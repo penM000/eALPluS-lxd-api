@@ -15,12 +15,12 @@ from ...internal.tools.exercise import setup_ssh, setup_syslog
 
 
 router = APIRouter(
-    prefix="/lxd/container/",
+    prefix="/lxd/container",
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("url/{class_id}/{student_id}")
+@router.get("/url/{class_id}/{student_id}")
 async def get_container_url(class_id: str,
                             student_id: str,
                             request: Request,
@@ -64,7 +64,7 @@ async def get_container_url(class_id: str,
         return result
 
 
-@router.get("ip_port/{class_id}/{student_id}")
+@router.get("/ip_port/{class_id}/{student_id}")
 async def get_container_ip_port(class_id: str,
                                 student_id: str,
                                 request: Request,
@@ -106,7 +106,7 @@ async def get_container_ip_port(class_id: str,
         return result
 
 
-@router.get("stop/{class_id}/{student_id}")
+@router.get("/stop/{class_id}/{student_id}")
 async def stop_container_by_class_id_student_id(class_id: str,
                                                 student_id: str,
                                                 ):
@@ -125,26 +125,26 @@ async def stop_container_by_class_id_student_id(class_id: str,
         return make_response_dict(False, "インスタンスは既に停止しています")
 
 
-@router.get("ssh_setup/{class_id}")
+@router.get("/ssh_setup/{class_id}")
 async def setup_ssh_by_class_id(class_id):
     return await setup_ssh(class_id)
 
 
-@router.get("syslog_setup/{class_id}")
+@router.get("/syslog_setup/{class_id}")
 async def setup_syslog_by_class_id(class_id):
     return await setup_syslog(class_id)
 
 
-@router.get("start/{class_id}")
+@router.get("/start/{class_id}")
 async def start_container_by_class_id(class_id: str):
     return await operation_of_class_instances(class_id, "start")
 
 
-@router.get("stop/{class_id}")
+@router.get("/stop/{class_id}")
 async def stop_container_by_class_id(class_id: str):
     return await operation_of_class_instances(class_id, "stop")
 
 
-@router.get("delete/{class_id}")
+@router.get("/delete/{class_id}")
 async def delete_container_by_class_id(class_id: str):
     return await operation_of_class_instances(class_id, "delete")
