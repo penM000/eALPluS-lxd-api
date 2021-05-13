@@ -8,7 +8,6 @@ from ...internal.lxd.instance import (launch_instance,
                                       get_instance,
                                       stop_instance,
                                       operation_of_class_instances)
-from ...internal.lxd.network import get_ip_address
 
 
 from ...internal.general.response import make_response_dict
@@ -16,20 +15,12 @@ from ...internal.tools.exercise import setup_ssh, setup_syslog
 
 
 router = APIRouter(
-    prefix="/lxd",
+    prefix="/lxd/container/",
     responses={404: {"description": "Not found"}},
 )
 
 
-@router.get("/ip")
-async def get_ip(request: Request):
-    """
-    ipアドレスの値を取得
-    """
-    return get_ip_address(request.client.host)[0]
-
-
-@router.get("/container/url/{class_id}/{student_id}")
+@router.get("url/{class_id}/{student_id}")
 async def get_container_url(class_id: str,
                             student_id: str,
                             request: Request,
@@ -73,7 +64,7 @@ async def get_container_url(class_id: str,
         return result
 
 
-@router.get("/container/ip_port/{class_id}/{student_id}")
+@router.get("ip_port/{class_id}/{student_id}")
 async def get_container_ip_port(class_id: str,
                                 student_id: str,
                                 request: Request,
@@ -115,7 +106,7 @@ async def get_container_ip_port(class_id: str,
         return result
 
 
-@router.get("/container/stop/{class_id}/{student_id}")
+@router.get("stop/{class_id}/{student_id}")
 async def stop_container_by_class_id_student_id(class_id: str,
                                                 student_id: str,
                                                 ):
@@ -134,26 +125,26 @@ async def stop_container_by_class_id_student_id(class_id: str,
         return make_response_dict(False, "インスタンスは既に停止しています")
 
 
-@router.get("/container/ssh_setup/{class_id}")
+@router.get("ssh_setup/{class_id}")
 async def setup_ssh_by_class_id(class_id):
     return await setup_ssh(class_id)
 
 
-@router.get("/container/syslog_setup/{class_id}")
+@router.get("syslog_setup/{class_id}")
 async def setup_syslog_by_class_id(class_id):
     return await setup_syslog(class_id)
 
 
-@router.get("/container/start/{class_id}")
+@router.get("start/{class_id}")
 async def start_container_by_class_id(class_id: str):
     return await operation_of_class_instances(class_id, "start")
 
 
-@router.get("/container/stop/{class_id}")
+@router.get("stop/{class_id}")
 async def stop_container_by_class_id(class_id: str):
     return await operation_of_class_instances(class_id, "stop")
 
 
-@router.get("/container/delete/{class_id}")
+@router.get("delete/{class_id}")
 async def delete_container_by_class_id(class_id: str):
     return await operation_of_class_instances(class_id, "delete")
