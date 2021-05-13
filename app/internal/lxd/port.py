@@ -6,7 +6,7 @@ from typing import List, Dict
 import pylxd
 
 from .client import client
-from .cluster import check_cluster, get_cluster_status
+from .cluster import check_cluster, get_cluster_status, get_all_node_used_port
 from ..general.async_wrap import async_wrap
 
 
@@ -23,7 +23,10 @@ async def get_used_port() -> List[int]:
     """
     現在利用中のportと割り当て済みのport一覧作成
     """
-    used_ports = await get_listen_status()
+    if await check_cluster():
+        used_ports = await get_all_node_used_port()
+    else:
+        used_ports = await get_listen_status()
     all_instances = await async_wrap(client.instances.all)()
     for instance in all_instances:
         for key in instance.devices:
