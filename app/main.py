@@ -2,12 +2,14 @@ from fastapi import FastAPI
 from starlette.responses import RedirectResponse
 
 from .routers.apis import lxd
+from .routers.apis import node
 from .routers.html import html
 
 
 app = FastAPI()
 
 app.include_router(lxd.router)
+app.include_router(node.router)
 app.include_router(html.router)
 
 
