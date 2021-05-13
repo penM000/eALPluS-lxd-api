@@ -1,4 +1,5 @@
 import json
+import asyncio
 from urllib.parse import urlparse
 from typing import List
 from ..general.async_wrap import async_wrap
@@ -29,17 +30,19 @@ async def get_all_node_used_port() -> List[int]:
     used_ports = []
     if await check_cluster():
         cluster = await get_cluster_status()
+        tasks = []
         for node_name in cluster.keys():
             if cluster[node_name][1] == "Online":
                 ip = cluster[node_name][0]
                 port = 8000
                 path = "/node/used_port"
                 url = f"http://{ip}:{port}{path}"
-
-                result = await get_html(url)
-                if result is None:
-                    continue
-                else:
-                    used_ports = used_ports + json.loads(result)
+                tasks.append(get_html(url))
+        task_result = await asyncio.gather(*tasks)
+        for result in task_result: 
+            if result is None:
+                continue
+            else:
+                used_ports = used_ports + json.loads(result)
     used_ports = sorted(set(used_ports))
     return used_ports
