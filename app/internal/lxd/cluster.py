@@ -25,6 +25,7 @@ async def get_cluster_status():
 
 
 async def get_all_node_used_port() -> List[int]:
+    used_ports = []
     if await check_cluster():
         cluster = await get_cluster_status()
         for node_name in cluster.keys():
@@ -34,5 +35,10 @@ async def get_all_node_used_port() -> List[int]:
                 path = "/node/used_port"
                 url = f"http://{ip}:{port}{path}"
 
-                print(await get_html(url))
-    return []
+                result = await get_html(url)
+                if result is None:
+                    continue
+                else:
+                    used_ports = used_ports + result
+    used_ports = sorted(set(used_ports))
+    return used_ports
