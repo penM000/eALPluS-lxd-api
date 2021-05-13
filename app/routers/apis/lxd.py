@@ -59,7 +59,7 @@ async def get_container_url(class_id: str,
             instance = await get_instance(f"{class_id}-{student_id}")
             ipaddr = await get_container_hostnode_ip(instance)
         else:
-            ipaddr = get_ip_address(request.client.host)
+            ipaddr = get_ip_address(request.client.host)[0]
 
         port = result["assign_port"]
         # print(f"http://{ipaddr}:{port}")
@@ -108,10 +108,10 @@ async def get_container_ip_port(class_id: str,
             instance = await get_instance(f"{class_id}-{student_id}")
             ipaddr = await get_container_hostnode_ip(instance)
         else:
-            ipaddr = get_ip_address(request.client.host)
+            ipaddr = get_ip_address(request.client.host)[0]
         port = result["assign_port"]
         # print(f"http://{ipaddr}:{port}")
-        return {"ip": ipaddr[0], "port": port}
+        return {"ip": ipaddr, "port": port}
     else:
         return result
 
