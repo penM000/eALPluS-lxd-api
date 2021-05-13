@@ -57,7 +57,7 @@ async def get_container_url(class_id: str,
         # ipaddr = "192.168.1.80"
         if await check_cluster():
             instance = await get_instance(f"{class_id}-{student_id}")
-            ipaddr = get_container_hostnode_ip(instance)
+            ipaddr = await get_container_hostnode_ip(instance)
         else:
             ipaddr = get_ip_address(request.client.host)
 
@@ -106,7 +106,7 @@ async def get_container_ip_port(class_id: str,
         # ipaddr = "192.168.1.80"
         if await check_cluster():
             instance = await get_instance(f"{class_id}-{student_id}")
-            ipaddr = get_container_hostnode_ip(instance)
+            ipaddr = await get_container_hostnode_ip(instance)
         else:
             ipaddr = get_ip_address(request.client.host)
         port = result["assign_port"]
