@@ -6,15 +6,25 @@ from typing import List, Dict
 import pylxd
 
 from .client import client
+from .cluster import check_cluster
 from ..general.async_wrap import async_wrap
+
+
+async def get_listen_status() -> List[int]:
+    net_status = await async_wrap(psutil.net_connections)()
+    listen_ports = [int(conn.laddr.port) for conn in net_status
+                    if conn.status == 'LISTEN']
+    if check_cluster():
+        pass
+
+    return listen_ports
 
 
 async def get_used_port() -> List[int]:
     """
     現在利用中のportと割り当て済みのport一覧作成
     """
-    used_ports = [int(conn.laddr.port) for conn in psutil.net_connections()
-                  if conn.status == 'LISTEN']
+    used_ports = await get_listen_status()
     all_instances = await async_wrap(client.instances.all)()
     for instance in all_instances:
         for key in instance.devices:
