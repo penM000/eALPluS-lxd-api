@@ -9,7 +9,7 @@ from .port import get_port
 from .image import check_existence_of_image
 from .launch import launch_container_instance
 from .tag import instance_tag
-
+from .cluster import check_cluster, get_container_hostnode_ip
 
 from ..general.get_html import oneshot_check_http_response
 from ..general.response import make_response_dict
@@ -115,17 +115,23 @@ async def launch_instance(
             else:
                 max_try -= 1
                 await asyncio.sleep(0.1)
+    #
     # port割当
     assign_port = await get_port(instance, port_name, src_port)
-
+    if await check_cluster():
+        assign_ip = await get_container_hostnode_ip(instance)
+    else:
+        assign_ip = "127.0.0.1"
     # 起動確認
     if 1 == startcheck:
         for loop in range(starttimeout):
             result = await oneshot_check_http_response(https,
+                                                       assign_ip,
                                                        assign_port,
                                                        httpstatus)
             if result:
-                return make_response_dict(assign_port=assign_port)
+                return make_response_dict(
+                    assign_ip=assign_ip, assign_port=assign_port)
             else:
                 await asyncio.sleep(2)
                 instance = await get_instance(hostname)
@@ -138,9 +144,12 @@ async def launch_instance(
                 assign_port = await get_port(instance, port_name, src_port)
 
         return make_response_dict(
-            False, "timeout_error", assign_port=assign_port)
+            False,
+            "timeout_error",
+            assign_ip=assign_ip,
+            assign_port=assign_port)
     else:
-        return make_response_dict(assign_port=assign_port)
+        return make_response_dict(assign_ip=assign_ip, assign_port=assign_port)
 
 
 async def operation_of_class_instances(class_id, mode: str = "start"):

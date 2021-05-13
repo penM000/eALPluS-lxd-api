@@ -8,9 +8,10 @@ from ...internal.lxd.instance import (launch_instance,
                                       get_instance,
                                       stop_instance,
                                       operation_of_class_instances)
-
-
+from ...internal.lxd.cluster import check_cluster, get_container_hostnode_ip
+from ...internal.lxd.network import get_ip_address
 from ...internal.general.response import make_response_dict
+
 from ...internal.tools.exercise import setup_ssh, setup_syslog
 
 
@@ -54,7 +55,11 @@ async def get_container_url(class_id: str,
 
     if result["status"]:
         # ipaddr = "192.168.1.80"
-        ipaddr = get_ip_address(request.client.host)[0]
+        if await check_cluster():
+            ipaddr = get_ip_address(request.client.host)
+        else:
+            instance = await get_instance(f"{class_id}-{student_id}")
+            ipaddr = get_container_hostnode_ip(instance)
         port = result["assign_port"]
         # print(f"http://{ipaddr}:{port}")
         response = RedirectResponse(url=f"http://{ipaddr}:{port}")
@@ -98,7 +103,11 @@ async def get_container_ip_port(class_id: str,
     # print(time.time() - now)
     if result["status"]:
         # ipaddr = "192.168.1.80"
-        ipaddr = get_ip_address(request.client.host)
+        if await check_cluster():
+            ipaddr = get_ip_address(request.client.host)
+        else:
+            instance = await get_instance(f"{class_id}-{student_id}")
+            ipaddr = get_container_hostnode_ip(instance)
         port = result["assign_port"]
         # print(f"http://{ipaddr}:{port}")
         return {"ip": ipaddr[0], "port": port}

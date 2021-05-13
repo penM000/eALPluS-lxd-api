@@ -4,29 +4,31 @@ import time
 import json
 
 
-async def check_http_response(https, assign_port, status, time_out) -> bool:
+async def check_http_response(
+        https, assign_ip, assign_port, status, time_out) -> bool:
     return await wait_get_html(
-        make_url(https, assign_port),
+        make_url(https, assign_ip, assign_port),
         status,
         time_out
     )
 
 
-async def oneshot_check_http_response(https, assign_port, status) -> bool:
+async def oneshot_check_http_response(
+        https, assign_ip, assign_port, status) -> bool:
     return await oneshot_get_html(
-        make_url(https, assign_port),
+        make_url(https, assign_ip, assign_port),
         status,
     )
 
 
-def make_url(https, assign_port) -> str:
+def make_url(https, assign_ip, assign_port) -> str:
     # URL生成
     try_url = ""
     if https == 0:
         try_url += "http://"
     else:
         try_url += "https://"
-    try_url += "127.0.0.1"
+    try_url += str(assign_ip)
     try_url += ":" + str(assign_port)
     return try_url
 

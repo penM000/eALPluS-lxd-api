@@ -2,9 +2,17 @@ import json
 import asyncio
 from urllib.parse import urlparse
 from typing import List
+import pylxd
 from ..general.async_wrap import async_wrap
 from .client import client
 from ..general.get_html import get_html
+
+
+async def get_container_hostnode_ip(instance: pylxd.models.instance.Instance):
+    if await check_cluster():
+        cluster_status = await get_cluster_status()
+        return cluster_status[instance.location][0]
+    return None
 
 
 async def check_cluster():
