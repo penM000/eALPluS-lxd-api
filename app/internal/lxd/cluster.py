@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 from typing import List
 from ..general.async_wrap import async_wrap
 from .client import client
+from ..general.get_html import get_html
 
 
 async def check_cluster():
@@ -32,5 +33,6 @@ async def get_all_node_used_port() -> List[int]:
                 port = 8000
                 path = "/node/used_port"
                 url = f"http://{ip}:{port}{path}"
-                print(url)
+
+                print(await get_html(url))
     return []

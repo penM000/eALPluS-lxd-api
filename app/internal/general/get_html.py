@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import time
+import json
 
 
 async def check_http_response(https, assign_port, status, time_out) -> bool:
@@ -59,6 +60,7 @@ async def get_html_status_code(url) -> int:
         except BaseException:
             return 0
 
+
 async def get_html(url) -> str:
     async with aiohttp.ClientSession() as session:
         try:
@@ -71,3 +73,9 @@ async def get_html(url) -> str:
             return None
         except BaseException:
             return None
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    hoge = loop.run_until_complete(
+        get_html("http://192.168.1.21:8000/node/used_port"))
+    print(type(json.loads(hoge)[0]))

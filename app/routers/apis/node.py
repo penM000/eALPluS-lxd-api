@@ -4,6 +4,7 @@ from ...internal.lxd.network import get_ip_address
 from ...internal.lxd.port import get_listen_status
 from ...internal.lxd.cluster import get_all_node_used_port
 
+
 router = APIRouter(
     prefix="/node",
     responses={404: {"description": "Not found"}},
