@@ -50,25 +50,25 @@ async def launch_container_instance(
             }
         }
     }
-    try:
-        # インスタンスの作成
-        instance = await async_wrap(client.containers.create)(config, wait=True)
-        # インスタンス情報の付与
-        tag = instance_tag(instance)
-        tag.tag["creating"] = "1"
-        tag.tag["role_id"] = role_id
-        tag.tag["class_id"] = class_id
-        await async_wrap(tag.save)()
-        # インスタンスの起動
-        await async_wrap(instance.start)(wait=True)
-        # 初回起動の終了記録
-        tag.tag["creating"] = "0"
-        await async_wrap(tag.save)()
+    # try:
+    # インスタンスの作成
+    instance = await async_wrap(client.containers.create)(config, wait=True)
+    # インスタンス情報の付与
+    tag = instance_tag(instance)
+    tag.tag["creating"] = "1"
+    tag.tag["role_id"] = role_id
+    tag.tag["class_id"] = class_id
+    await async_wrap(tag.save)()
+    # インスタンスの起動
+    await async_wrap(instance.start)(wait=True)
+    # 初回起動の終了記録
+    tag.tag["creating"] = "0"
+    await async_wrap(tag.save)()
 
-        print(f"create new instance:{hostname}")
-        return instance
-    except BaseException:
-        return None
+    print(f"create new instance:{hostname}")
+    return instance
+    # except BaseException:
+    #    return None
 
 
 def launch_virtual_instance():
