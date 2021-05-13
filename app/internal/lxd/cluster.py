@@ -11,6 +11,7 @@ from ..general.get_html import get_html
 async def get_container_hostnode_ip(instance: pylxd.models.instance.Instance):
     if await check_cluster():
         cluster_status = await get_cluster_status()
+        print(cluster_status, instance.location)
         return cluster_status[instance.location][0]
     return None
 
