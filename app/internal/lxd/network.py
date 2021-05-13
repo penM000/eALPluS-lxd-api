@@ -23,7 +23,7 @@ async def create_network(name: str, network_type: str = "auto") -> None:
             if await check_cluster():
                 network_type = "ovn"
                 config = {
-                    "network": "lxdbr0"
+                    "network": "lxdbr0",
                     "ipv4.address": "auto",
                     "ipv4.nat": "true",
                     "ipv6.address": "auto",
