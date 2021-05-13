@@ -1,3 +1,4 @@
+import json
 from urllib.parse import urlparse
 from typing import List
 from ..general.async_wrap import async_wrap
@@ -39,6 +40,6 @@ async def get_all_node_used_port() -> List[int]:
                 if result is None:
                     continue
                 else:
-                    used_ports = used_ports + result
+                    used_ports = used_ports + json.loads(result)
     used_ports = sorted(set(used_ports))
     return used_ports
