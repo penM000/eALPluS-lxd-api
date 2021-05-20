@@ -32,7 +32,7 @@ async def launch_instance(
     httpstatus=200,
     starttimeout=10,
     startportassign=49152,
-    role_id="",
+    role_id="student",
     class_id=""
 
 ):
