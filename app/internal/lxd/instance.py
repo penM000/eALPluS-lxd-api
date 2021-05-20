@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import asyncio
+import datetime
 import pylxd
 from typing import Union, List
 
@@ -115,7 +116,15 @@ async def launch_instance(
             else:
                 max_try -= 1
                 await asyncio.sleep(0.1)
-    #
+    # インスタンスのリソース制限の更新
+    tag = instance_tag(instance)
+    tag.limits["cpu"] = str(cpu)
+    tag.limits["memory"] = str(memory)
+    # アクセスログ
+    tag.usertag["last_access"] = str(datetime.datetime.now(datetime.timezone(
+        datetime.timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S%z'))
+    await async_wrap(tag.save)()
+
     # port割当
     assign_port = await get_port(instance, port_name, src_port)
     if await check_cluster():
