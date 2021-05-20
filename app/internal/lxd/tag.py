@@ -15,7 +15,7 @@ class instance_tag():
                 self.usertag[key[5:]] = self.instance.config[key]
 
             if key.startswith("limits."):
-                self.limits[key[5:]] = self.instance.config[key]
+                self.limits[key[6:]] = self.instance.config[key]
         return self.usertag, self.limits
 
     def save(self):
@@ -24,6 +24,7 @@ class instance_tag():
             config[f"user.{key}"] = str(self.usertag[key])
 
         for key in self.limits.keys():
+
             config[f"limits.{key}"] = str(self.limits[key])
 
         self.instance.config.update(config)
