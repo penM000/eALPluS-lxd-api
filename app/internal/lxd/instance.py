@@ -95,7 +95,7 @@ async def launch_instance(
             tag = instance_tag(instance)
             if instance.status == "Running":
                 break
-            if "creating" in tag.tag and tag.tag["creating"] == "0":
+            if "creating" in tag.usertag and tag.usertag["creating"] == "0":
                 if await start_instance(instance):
                     break
                 else:
@@ -103,9 +103,9 @@ async def launch_instance(
                         False, "インスタンス起動中にインスタンスの削除処理が行われました")
             elif max_try < 0:
                 # 手動で作成されたインスタンスの場合
-                tag.tag["creating"] = "0"
-                tag.tag["role_id"] = role_id
-                tag.tag["class_id"] = class_id
+                tag.usertag["creating"] = "0"
+                tag.usertag["role_id"] = role_id
+                tag.usertag["class_id"] = class_id
                 await async_wrap(tag.save)()
                 if await start_instance(instance):
                     break

@@ -5,20 +5,28 @@ import pylxd
 class instance_tag():
     def __init__(self, instance):
         self.instance: pylxd.models.instance.Instance = instance
-        self.tag = dict()
-        self.tag = self.get()
+        self.usertag = dict()
+        self.limits = dict()
+        self.get()
 
     def get(self) -> Dict[str, str]:
         for key in self.instance.config.keys():
             if key.startswith("user."):
-                self.tag[key[5:]] = self.instance.config[key]
-        return self.tag
+                self.usertag[key[5:]] = self.instance.config[key]
+
+            if key.startswith("limits."):
+                self.limits[key[5:]] = self.instance.config[key]
+        return self.usertag, self.limits
 
     def save(self):
-        tag = dict()
-        for key in self.tag.keys():
-            tag[f"user.{key}"] = str(self.tag[key])
-        self.instance.config.update(tag)
+        config = dict()
+        for key in self.usertag.keys():
+            config[f"user.{key}"] = str(self.usertag[key])
+
+        for key in self.limits.keys():
+            config[f"limits.{key}"] = str(self.limits[key])
+
+        self.instance.config.update(config)
         try:
             self.instance.save(wait=True)
             return True
