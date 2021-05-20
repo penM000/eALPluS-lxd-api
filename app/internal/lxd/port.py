@@ -116,7 +116,9 @@ async def get_port(instance: pylxd.models.Container,
             'type': 'proxy'}
         try:
             await async_wrap(instance.save)(wait=True)
-        except Exception:
+        except pylxd.exceptions.LXDAPIException as e:
+            print(e)
+            pylxd.exceptions.LXDAPIException
             print("INFO:conflict port!! retry")
             return await get_port(instance, device_name, srcport, retry=True)
         # 同時割当時の対策
