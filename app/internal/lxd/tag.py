@@ -22,5 +22,5 @@ class instance_tag():
         try:
             self.instance.save(wait=True)
             return True
-        except BaseException:
+        except Exception:
             return False

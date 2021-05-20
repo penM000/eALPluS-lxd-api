@@ -74,7 +74,7 @@ async def launch_instance(
         while True:
             try:
                 instance = await get_instance(hostname)
-            except BaseException:
+            except Exception:
                 instance = None
                 max_try -= 1
                 await asyncio.sleep(0.1)
@@ -193,7 +193,7 @@ async def stop_instance(instance: pylxd.models.instance.Instance) -> bool:
     try:
         await async_wrap(instance.stop)(wait=True)
         return True
-    except BaseException:
+    except Exception:
         return False
 
 
@@ -201,5 +201,5 @@ async def start_instance(instance: pylxd.models.instance.Instance) -> bool:
     try:
         await async_wrap(instance.start)(wait=True)
         return True
-    except BaseException:
+    except Exception:
         return False

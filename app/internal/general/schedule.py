@@ -2,6 +2,8 @@ from typing import List, Dict
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
+
+
 # スケジューラー
 Schedule = AsyncIOScheduler()
 Schedule.start()
@@ -17,7 +19,7 @@ def add_schedule(_id, func, delay) -> bool:
             seconds=delay,
             id=_id
         )
-    except BaseException:
+    except Exception:
         return False
     return True
 
@@ -25,7 +27,7 @@ def add_schedule(_id, func, delay) -> bool:
 def remove_schedule(_id) -> bool:
     try:
         Schedule.remove_job(_id)
-    except BaseException:
+    except Exception:
         return False
     return True
 

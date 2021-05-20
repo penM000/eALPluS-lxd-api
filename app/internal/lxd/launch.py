@@ -67,7 +67,7 @@ async def launch_container_instance(
 
     print(f"create new instance:{hostname}")
     return instance
-    # except BaseException:
+    # except Exception:
     #    return None
 
 

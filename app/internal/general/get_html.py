@@ -59,7 +59,7 @@ async def get_html_status_code(url) -> int:
             return 0
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return 0
-        except BaseException:
+        except Exception:
             return 0
 
 
@@ -73,7 +73,7 @@ async def get_html(url) -> str:
             return None
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return None
-        except BaseException:
+        except Exception:
             return None
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ async def send_file_to_instance(instance: pylxd.models.instance.Instance,
     try:
         await async_instance_file_put(filename, filemetadata)
         return True
-    except BaseException:
+    except Exception:
         return False
 
 
