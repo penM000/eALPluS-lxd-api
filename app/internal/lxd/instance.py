@@ -123,7 +123,7 @@ async def launch_instance(
     # アクセスログ
     tag.usertag["last_access"] = str(datetime.datetime.now(datetime.timezone(
         datetime.timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S%z'))
-    await async_wrap(tag.save)()
+    tag.save(wait=False)
 
     # port割当
     assign_port = await get_port(instance, port_name, src_port)
@@ -190,12 +190,9 @@ async def get_instance(name: str) -> Union[
         pylxd.models.instance.Instance,
         None]:
 
-    instance = None
-    try:
-        instance = await async_wrap(client.instances.get)(name)
-    except pylxd.exceptions.NotFound:
-        return instance
-    return instance
+    if await async_wrap(client.instances.exists)(name):
+        return await async_wrap(client.instances.get)(name)
+    return None
 
 
 async def stop_instance(instance: pylxd.models.instance.Instance) -> bool:
