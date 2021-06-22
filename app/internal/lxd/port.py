@@ -91,6 +91,25 @@ def get_instance_used_port(
     return used_ports
 
 
+async def del_instance_proxy_port(instance):
+    """
+    返り値:bool
+    """
+    proxy_names = []
+    for key in instance.devices:
+        if "type" in instance.devices[key]:
+            if instance.devices[key]["type"] == "proxy":
+                proxy_names.append(key)
+    for proxy_name in proxy_names:
+        del instance.devices[proxy_name]
+    try:
+        await async_wrap(instance.save)(wait=True)
+    except Exception:
+        return False
+    finally:
+        return True
+
+
 async def get_port(instance: pylxd.models.Container,
                    device_name: str,
                    srcport: int,

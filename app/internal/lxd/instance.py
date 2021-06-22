@@ -6,7 +6,7 @@ from typing import Union, List
 
 from .client import client
 from .network import create_network
-from .port import get_port
+from .port import get_port, del_instance_proxy_port
 from .image import check_existence_of_image
 from .launch import launch_container_instance
 from .tag import instance_tag
@@ -100,9 +100,12 @@ async def launch_instance(
                 if await start_instance(instance):
                     break
                 else:
+                    await del_instance_proxy_port(instance)
                     return make_response_dict(
                         False,
                         f"インスタンス起動処理に失敗しました。\
+                            再度接続を試してください。\
+                            複数回失敗するようであれば、\
                             管理者にこのメッセージを送信してください。id={instance.name}"
                     )
             elif max_try < 0:
@@ -114,9 +117,12 @@ async def launch_instance(
                 if await start_instance(instance):
                     break
                 else:
+                    await del_instance_proxy_port(instance)
                     return make_response_dict(
                         False,
                         f"インスタンス起動処理に失敗しました。\
+                            再度接続を試してください。\
+                            複数回失敗するようであれば、\
                             管理者にこのメッセージを送信してください。id={instance.name}"
                     )
             else:
