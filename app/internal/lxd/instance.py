@@ -101,7 +101,10 @@ async def launch_instance(
                     break
                 else:
                     return make_response_dict(
-                        False, "インスタンス起動中にインスタンスの削除処理が行われました")
+                        False,
+                        f"インスタンス起動処理に失敗しました。\
+                            管理者にこのメッセージを送信してください。id={instance.name}"
+                    )
             elif max_try < 0:
                 # 手動で作成されたインスタンスの場合
                 tag.usertag["creating"] = "0"
@@ -112,7 +115,10 @@ async def launch_instance(
                     break
                 else:
                     return make_response_dict(
-                        False, "インスタンス起動中にインスタンスの削除処理が行われました")
+                        False,
+                        f"インスタンス起動処理に失敗しました。\
+                            管理者にこのメッセージを送信してください。id={instance.name}"
+                    )
             else:
                 max_try -= 1
                 await asyncio.sleep(0.1)
