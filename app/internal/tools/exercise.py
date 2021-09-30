@@ -52,13 +52,13 @@ async def get_teacher_and_student_instances(class_id):
     for instance in all_instances:
         tag = instance_tag(instance)
         # インスタンスに識別がある場合
-        if "class_id" in tag.tag and "role_id" in tag.tag:
-            if tag.tag["class_id"] == class_id:
-                if tag.tag["role_id"] == "teacher":
+        if "class_id" in tag.usertag and "role_id" in tag.usertag:
+            if tag.usertag["class_id"] == class_id:
+                if tag.usertag["role_id"] == "teacher":
                     teacher_instances.append(instance)
-                elif tag.tag["role_id"] == "student":
+                elif tag.usertag["role_id"] == "student":
                     student_instances.append(instance)
-                elif tag.tag["role_id"] == "syslog":
+                elif tag.usertag["role_id"] == "syslog":
                     syslog_instances.append(instance)
         else:
             pass
